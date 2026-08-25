@@ -1089,7 +1089,14 @@ export async function getAdminPingTasks(options?: ApiCallOptions): Promise<PingT
   // 迁移到 Connect (komari.admin.v1.PingTaskService) 一并移除，直接请求会 404。
   // admin:getAllPingTasks 仍作为主题兼容层保留在 /api/rpc2 上。
   try {
-    return await rpcCall("admin:getAllPingTasks", {}, z.array(PingTaskSchema), options);
+    // 与下方 apiGet 同样需要断言：PingTaskSchema 带 .default() 且 passthrough，
+    // zod 的 input 与 output 类型不同，泛型会被推断成 input 侧。
+    return (await rpcCall(
+      "admin:getAllPingTasks",
+      {},
+      z.array(PingTaskSchema),
+      options,
+    )) as PingTask[];
   } catch (error) {
     if (options?.signal?.aborted) throw error;
     // 上游 Komari 仍提供该 REST 路由，保留兜底让同一份主题在两侧都能用。
