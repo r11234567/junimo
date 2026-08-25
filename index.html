@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<!-- lang 必须保持 en：Komari 注入站点语言时只识别 lang="en"、lang='en' 或根元素
+     完全不带 lang 三种写法，写死其他语种会让站点语言设置被静默忽略。 -->
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -15,12 +17,12 @@
     <link rel="apple-touch-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon.ico" />
     <meta property="og:title" content="lumina-pro" />
-    <meta property="og:description" content="A Komari monitor theme." />
+    <meta property="og:description" content="A simple server monitor tool." />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="lumina-pro" />
-    <meta name="twitter:description" content="A Komari monitor theme." />
+    <meta name="twitter:description" content="A simple server monitor tool." />
     <title>lumina-pro</title>
-    <meta name="description" content="A Komari monitor theme." />
+    <meta name="description" content="A simple server monitor tool." />
     <script>
       (() => {
         const appearances = new Set(["system", "light", "dark", "farm"]);

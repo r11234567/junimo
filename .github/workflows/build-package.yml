@@ -37,31 +37,99 @@ jobs:
       - name: Build package
         run: npm run package
 
+      # 产物名由 komari-theme.json 的 name/version 决定（见 scripts/package-zip.mjs），
+      # 写死通配会在改名后静默上传空附件，这里直接从 manifest 推导。
+      - name: Resolve package path
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip_name="$(node -p "const m=require('./komari-theme.json');\`\${m.name ?? 'Komari-Theme-LuminaPlus'}-v\${m.version}.zip\`")"
+          if [ ! -f "$zip_name" ]; then
+            echo "::error::找不到打包产物 $zip_name"
+            ls -1 ./*.zip 2>/dev/null || true
+            exit 1
+          fi
+          # 主题市场按 SHA-256 校验分发包
+          sha256sum "$zip_name" > "$zip_name.sha256"
+          cat "$zip_name.sha256"
+          echo "zip=$zip_name" >> "$GITHUB_OUTPUT"
+
+      - name: Verify theme contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # 站点描述是字面替换：dist/index.html 里必须留着这句原文，
+          # 否则后台设置的描述不会被注入（标题走正则，任何 <title> 都会被替换）。
+          if ! grep -qF 'A simple server monitor tool.' dist/index.html; then
+            echo "::error::dist/index.html 缺少站点描述锚点 'A simple server monitor tool.'"
+            exit 1
+          fi
+
+          # 站点语言只识别 lang="en"、lang='en' 或根元素完全不带 lang 三种写法。
+          if ! grep -qE '<html([^>]*\slang=["'"'"']en["'"'"'][^>]*)?>' dist/index.html; then
+            echo "::error::dist/index.html 的 <html> 需为 lang=\"en\" 或不带 lang，否则站点语言设置会被忽略"
+            exit 1
+          fi
+
+          # 自定义 head/body 与主题热重载脚本都靠这两个闭合标签定位。
+          for tag in '</head>' '</body>'; do
+            if ! grep -qF "$tag" dist/index.html; then
+              echo "::error::dist/index.html 缺少 $tag，自定义注入会失效"
+              exit 1
+            fi
+          done
+
+          # Go 的 embed 会忽略下划线开头的文件，这类产物装进去就是 404
+          if find dist -name '_*' | grep -q .; then
+            echo "::error::产物中存在以 _ 开头的文件，会被 go embed 忽略"
+            find dist -name '_*'
+            exit 1
+          fi
+
+          # 包内 manifest 版本必须与 tag 一致，否则主题市场的自动更新会拒绝
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            manifest_version="$(node -p "require('./komari-theme.json').version")"
+            tag_version="${GITHUB_REF_NAME#v}"
+            if [ "$manifest_version" != "$tag_version" ]; then
+              echo "::error::komari-theme.json 的 version ($manifest_version) 与 tag ($tag_version) 不一致"
+              exit 1
+            fi
+          fi
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Komari-Theme-LuminaPlus-package
+          name: junimo-theme-package
           path: |
-            Komari-Theme-LuminaPlus-v*.zip
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.zip }}.sha256
             preview.png
 
+      # 有手写的 release notes 就用，没有则退回自动生成的提交摘要，
+      # 不再因为缺一个文件让整次发布失败。
       - name: Resolve release notes
         if: startsWith(github.ref, 'refs/tags/')
         id: release-notes
         shell: bash
         run: |
+          set -euo pipefail
           notes=".github/release-notes/${GITHUB_REF_NAME}.md"
-          if [[ ! -f "$notes" ]]; then
-            echo "::error::Missing release notes: $notes"
-            exit 1
+          if [ -f "$notes" ]; then
+            echo "path=$notes" >> "$GITHUB_OUTPUT"
+          else
+            echo "未找到 $notes，使用自动生成的发布说明"
+            echo "path=" >> "$GITHUB_OUTPUT"
           fi
-          echo "path=$notes" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            Komari-Theme-LuminaPlus-v*.zip
+            ${{ steps.package.outputs.zip }}
+            ${{ steps.package.outputs.zip }}.sha256
             preview.png
           body_path: ${{ steps.release-notes.outputs.path }}
+          generate_release_notes: ${{ steps.release-notes.outputs.path == '' }}

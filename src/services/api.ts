@@ -1085,7 +1085,16 @@ export async function getPingRecords(
 }
 
 export async function getAdminPingTasks(options?: ApiCallOptions): Promise<PingTask[]> {
-  return (await apiGet("/api/admin/ping", z.array(PingTaskSchema), options)) as PingTask[];
+  // 走 RPC2 而不是 /api/admin/ping：该 REST 桥接在 Komari Lite 中已随延迟监测任务
+  // 迁移到 Connect (komari.admin.v1.PingTaskService) 一并移除，直接请求会 404。
+  // admin:getAllPingTasks 仍作为主题兼容层保留在 /api/rpc2 上。
+  try {
+    return await rpcCall("admin:getAllPingTasks", {}, z.array(PingTaskSchema), options);
+  } catch (error) {
+    if (options?.signal?.aborted) throw error;
+    // 上游 Komari 仍提供该 REST 路由，保留兜底让同一份主题在两侧都能用。
+    return (await apiGet("/api/admin/ping", z.array(PingTaskSchema), options)) as PingTask[];
+  }
 }
 
 export async function saveThemeSettings(
