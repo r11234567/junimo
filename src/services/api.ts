@@ -446,7 +446,7 @@ async function getPingMetricData({
   let series: PingMetricSeries[] = metricPayload.series.map((item) => ({
     metricKey: item.metric_key,
     client: item.entity_id,
-    tags: item.tags ?? item.tag ?? {},
+    tags: item.tags ?? {},
     intervalSeconds: item.interval_seconds,
     points: item.points,
   }));
@@ -463,7 +463,7 @@ async function getPingMetricData({
       (item, intervalSeconds) => ({
         metricKey: item.metric_key,
         client: item.entity_id,
-        tags: item.tags ?? item.tag ?? {},
+        tags: item.tags ?? {},
         intervalSeconds,
         points: rawMetricPoints(item),
       }),

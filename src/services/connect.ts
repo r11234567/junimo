@@ -11,6 +11,7 @@
 import { createClient } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
 import { timestampDate, timestampFromDate } from "@bufbuild/protobuf/wkt";
+import type { Duration, Timestamp } from "@bufbuild/protobuf/wkt";
 import {
   AgentStatus,
   BrowserService,
@@ -48,10 +49,10 @@ const callOptions = (options?: ConnectCallOptions) => ({
 /** protobuf 的 uint64 在 TS 里是 bigint，主题各处按 number 计算。 */
 const asNumber = (value?: bigint) => Number(value ?? 0n);
 
-const isoOf = (value?: { seconds: bigint; nanos: number }) =>
+const isoOf = (value?: Timestamp) =>
   value ? timestampDate(value).toISOString() : "";
 
-const secondsOf = (value?: { seconds: bigint; nanos: number }) =>
+const secondsOf = (value?: Duration) =>
   value ? Number(value.seconds) : 0;
 
 // ---------------------------------------------------------------- 站点与会话
@@ -193,9 +194,9 @@ const startLiveStatusStream = () => {
   if (streamStarted) return;
   streamStarted = true;
 
-  let resolveFirst: (() => void) | null = null;
+  const pendingFirst: { resolve?: () => void } = {};
   firstEvent = new Promise<void>((resolve) => {
-    resolveFirst = resolve;
+    pendingFirst.resolve = resolve;
   });
 
   void (async () => {
@@ -211,8 +212,8 @@ const startLiveStatusStream = () => {
           // 记住事件位点，重连时不必从头重放。
           afterEventId = agent.eventId || afterEventId;
           snapshot.set(agent.agentId, realtimeOf(agent, event.latestReport));
-          resolveFirst?.();
-          resolveFirst = null;
+          pendingFirst.resolve?.();
+          pendingFirst.resolve = undefined;
         }
       } catch {
         // 断开按重连处理；首个事件的等待者不会被永久挂住，见下面的超时。
@@ -253,7 +254,8 @@ export async function fetchLatestStatus(
 
 export interface MetricQueryParams {
   entity_ids?: string[];
-  metric_keys?: string[];
+  // 调用方常以 as const 声明指标集合，这里接受只读数组。
+  metric_keys?: readonly string[];
   hours?: number;
   start?: string;
   end?: string;
