@@ -300,11 +300,11 @@ async function loadRecordFallback(
     const batch = uuids.slice(index, index + FALLBACK_CONCURRENCY);
     const responses = await Promise.allSettled(
       batch.map(async (uuid) => {
+        // 批量聚合刚刚失败过，这里改为逐台重试同一个指标查询：范围更小、
+        // 单台失败不再连带整批。
         const data = await getLoadRecords(uuid, rangeHours, {
           signal,
           timeout: FALLBACK_REQUEST_TIMEOUT_MS,
-          // 聚合接口刚刚失败过，兼容路径直接读 records，避免每台节点重复探测。
-          skipMetricQuery: true,
         });
         return {
           row: summarizeTodayTrafficRecords(uuid, data.records, startMs, endMs),

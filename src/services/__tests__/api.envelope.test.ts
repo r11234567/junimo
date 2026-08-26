@@ -1,35 +1,30 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const rpcCallMock = vi.hoisted(() => vi.fn());
+import { getAdminClients } from "@/services/api";
 
-vi.mock("@/services/rpc2Client", () => ({
-  getRpc2Client: () => ({ call: rpcCallMock }),
-}));
-
-import { getPublic } from "@/services/api";
-
+// 公开数据已改走 Connect，信封解析只剩下 /api/admin/client/list 这类仍为 REST 的
+// 后台接口，因此改用它来覆盖同一段解析逻辑。
 describe("API envelope parsing", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    rpcCallMock.mockReset();
   });
 
   it("preserves a server error message when an error envelope omits data", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ status: "error", message: "theme unavailable" }), {
+        new Response(JSON.stringify({ status: "error", message: "forbidden" }), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         }),
       ),
     );
 
-    await expect(getPublic()).rejects.toMatchObject({
+    await expect(getAdminClients()).rejects.toMatchObject({
       name: "ApiRequestError",
-      message: "theme unavailable",
+      message: "forbidden",
       status: 200,
-      path: "/api/public",
+      path: "/api/admin/client/list",
     });
   });
 
@@ -40,15 +35,15 @@ describe("API envelope parsing", () => {
         new Response(
           JSON.stringify({
             status: "success",
-            data: { sitename: "Test site", theme_settings: { showPingChart: false } },
+            data: [{ uuid: "node-a", name: "Node A" }],
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
       ),
     );
 
-    const result = await getPublic();
-    expect(result.sitename).toBe("Test site");
-    expect(result.theme_settings).toEqual({ showPingChart: false });
+    const result = await getAdminClients();
+    expect(result).toHaveLength(1);
+    expect(result[0]?.uuid).toBe("node-a");
   });
 });
