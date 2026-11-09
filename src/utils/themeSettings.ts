@@ -160,7 +160,15 @@ function normalizeAppearance(
   value: unknown,
   fallback: Appearance = DEFAULT_THEME_SETTINGS.defaultAppearance,
 ): Appearance {
-  return isAppearance(value) ? value : fallback;
+  if (isAppearance(value)) return value;
+  if (typeof value === "string") {
+    const lower = value.toLowerCase().trim();
+    if (lower === "farm" || lower === "像素农场" || lower === "农场") return "farm";
+    if (lower === "system" || lower === "跟随系统" || lower === "系统") return "system";
+    if (lower === "light" || lower === "浅色") return "light";
+    if (lower === "dark" || lower === "深色") return "dark";
+  }
+  return fallback;
 }
 
 export function isNodeViewMode(value: unknown): value is NodeViewMode {
@@ -172,8 +180,15 @@ function normalizeNodeViewMode(
   fallback: NodeViewMode,
 ): NodeViewMode {
   if (isNodeViewMode(value)) return value;
-  // 未知旧字符串统一落到小卡，避免升级后出现无选中项。
-  return typeof value === "string" && value.length > 0 ? "compact" : fallback;
+  if (typeof value === "string") {
+    const lower = value.toLowerCase().trim();
+    if (lower === "large" || lower === "大卡片" || lower === "大卡" || lower === "大视图") return "large";
+    if (lower === "compact" || lower === "紧凑卡" || lower === "小卡" || lower === "小视图") return "compact";
+    if (lower === "mini" || lower === "迷你卡" || lower === "迷你" || lower === "迷你视图") return "mini";
+    if (lower === "list" || lower === "表格列表" || lower === "列表" || lower === "列表视图") return "list";
+    if (lower.length > 0) return "compact";
+  }
+  return fallback;
 }
 
 // 列表档仅桌面可用(见 useViewMode 的 MOBILE_VIEW_MODES)。移动端即便配置里存了 "list"
@@ -186,8 +201,24 @@ function normalizeMobileNodeViewMode(
   return mode === "list" ? fallback : mode;
 }
 
-function enabledUnlessFalse(value: unknown) {
-  return value !== false;
+function enabledUnlessFalse(value: unknown): boolean {
+  if (value === false || value === "false" || value === 0 || value === "0") {
+    return false;
+  }
+  return true;
+}
+
+function isTruthyBoolean(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+function normalizeHomeOverviewDensity(value: unknown): "auto" | "full" | "compact" {
+  if (typeof value === "string") {
+    const lower = value.toLowerCase().trim();
+    if (lower === "full" || lower === "完整") return "full";
+    if (lower === "compact" || lower === "压缩") return "compact";
+  }
+  return "auto";
 }
 
 function normalizePlainText(value: unknown) {
@@ -212,39 +243,47 @@ export function normalizeThemeSettings(
   settings: (ThemeSettings & Record<string, unknown>) | null | undefined,
 ): ResolvedThemeSettings {
   const homepageMultiPingTaskIds = normalizeHomepageMultiPingTaskIds(
-    settings?.homepageMultiPingTaskIds,
+    settings?.homepageMultiPingTaskIds ?? settings?.pingTasks ?? settings?.ping_tasks,
   );
   const homepageMultiPingGroups = normalizeHomepageMultiPingGroups(
     settings?.homepageMultiPingGroups,
-    settings?.homepageMultiPingTaskIds,
+    homepageMultiPingTaskIds,
   );
+  const rawEnableMultiPing = (settings as Record<string, unknown> | null | undefined)?.enableHomepageMultiPing;
+  const multiPingActive =
+    isTruthyBoolean(rawEnableMultiPing ?? settings?.showModernPingStats) ||
+    (homepageMultiPingTaskIds.length === 3 &&
+      rawEnableMultiPing !== false &&
+      rawEnableMultiPing !== "false");
+
+  let homepagePingBindings = normalizeHomepagePingTaskBindings(settings?.homepagePingBindings);
+  // 如果后台只配置了 1 个 Ping 任务，且未配置单机绑定字典，则自动作为全局单线路绑定
+  if (Object.keys(homepagePingBindings).length === 0 && homepageMultiPingTaskIds.length === 1) {
+    homepagePingBindings = { [String(homepageMultiPingTaskIds[0])]: [] };
+  }
+
   return {
-    defaultAppearance: normalizeAppearance(settings?.defaultAppearance),
+    defaultAppearance: normalizeAppearance(
+      settings?.defaultAppearance ?? settings?.appearance,
+    ),
     desktopNodeViewMode: normalizeNodeViewMode(
-      settings?.desktopNodeViewMode,
+      settings?.desktopNodeViewMode ?? settings?.desktopDefaultViewMode ?? settings?.defaultViewMode,
       DEFAULT_THEME_SETTINGS.desktopNodeViewMode,
     ),
     mobileNodeViewMode: normalizeMobileNodeViewMode(
-      settings?.mobileNodeViewMode,
+      settings?.mobileNodeViewMode ?? settings?.mobileDefaultViewMode ?? settings?.defaultViewMode,
       DEFAULT_THEME_SETTINGS.mobileNodeViewMode,
     ),
     enableAdminButton: enabledUnlessFalse(settings?.enableAdminButton),
     showPingChart: enabledUnlessFalse(settings?.showPingChart),
-    homepagePingBindings: normalizeHomepagePingTaskBindings(settings?.homepagePingBindings),
-    // 保留开关原值，让管理页能呈现并修复不完整配置；首页消费方仅在任务恰好为三项时启用。
-    enableHomepageMultiPing: settings?.enableHomepageMultiPing === true,
+    homepagePingBindings,
+    enableHomepageMultiPing: multiPingActive,
     homepageMultiPingTaskIds,
     homepageMultiPingGroups,
-    // 默认关闭(需手动开启):给访客展示的是模拟数据,必须由站长显式决定。
-    fakePingForUnbound: settings?.fakePingForUnbound === true,
+    fakePingForUnbound: isTruthyBoolean(settings?.fakePingForUnbound),
     showHomeOverview: enabledUnlessFalse(settings?.showHomeOverview),
-    // 三态密度:非法值一律回退 auto(跟随视图模式),保证存量配置与未知写入安全。
-    homeOverviewDensity:
-      settings?.homeOverviewDensity === "full" || settings?.homeOverviewDensity === "compact"
-        ? settings.homeOverviewDensity
-        : "auto",
-    // 折叠为精简条:默认关闭,需站长显式开启。
-    homeOverviewCollapsible: settings?.homeOverviewCollapsible === true,
+    homeOverviewDensity: normalizeHomeOverviewDensity(settings?.homeOverviewDensity),
+    homeOverviewCollapsible: isTruthyBoolean(settings?.homeOverviewCollapsible),
     showGroupTabs: enabledUnlessFalse(settings?.showGroupTabs),
     showRegionBar: enabledUnlessFalse(settings?.showRegionBar),
     showCardGroup: enabledUnlessFalse(settings?.showCardGroup),
@@ -263,16 +302,13 @@ export function normalizeThemeSettings(
     compactShowTrafficTotal: enabledUnlessFalse(settings?.compactShowTrafficTotal),
     compactShowBilling: enabledUnlessFalse(settings?.compactShowBilling),
     compactShowUptime: enabledUnlessFalse(settings?.compactShowUptime),
-    // 默认关闭(需手动开启):连接数是个小众指标,很多 agent 也不上报,所以只在显式启用时才显示。
-    showConnections: settings?.showConnections === true,
+    showConnections: isTruthyBoolean(settings?.showConnections),
     showTodayTrafficPopover: enabledUnlessFalse(settings?.showTodayTrafficPopover),
     hiddenNodes: normalizeNodeIdentityList(settings?.hiddenNodes),
     costIgnoredNodes: normalizeCostIgnoredNodes(settings?.costIgnoredNodes),
     costPremiums: normalizeCostPremiums(settings?.costPremiums),
     costRateApiUrl: normalizeCostRateApiUrl(settings?.costRateApiUrl),
-    // 默认开:让已配置背景图的存量站点升级后行为不变;关闭 = 保留 URL 但不加载背景图。
     enableBackgroundImage: enabledUnlessFalse(settings?.enableBackgroundImage),
-    // 默认生效：与已发布行为一致；站长可关掉让 farm 始终用自己的场景。
     backgroundImageInFarm: enabledUnlessFalse(settings?.backgroundImageInFarm),
     farmSignColors: normalizeFarmSignColors(settings?.farmSignColors),
     backgroundImage: normalizeBackgroundUrl(settings?.backgroundImage),

@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Grid3x3, LayoutGrid, List, Monitor, Palette, Rows3, Settings, SlidersHorizontal, Sprout, Sun, Moon } from "lucide-react";
-import { Link } from "react-router-dom";
+import { AlertTriangle, ChevronLeft, ChevronRight, Grid3x3, LayoutGrid, List, Monitor, Palette, Rows3, Settings, Sprout, Sun, Moon } from "lucide-react";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useNodeStoreStatus } from "@/hooks/useNode";
@@ -44,9 +43,8 @@ export function FloatingControls({
   const [colorsMounted, setColorsMounted] = useState(false);
   const settingsReady = themeSettings.isReady;
   const showAdmin = settingsReady && themeSettings.enableAdminButton;
-  // 主题管理入口与配色取色器都仅对登录管理员开放（配色存后端、全局生效）。
+  // 配色取色器仅对登录管理员开放（配色存后端、全局生效）。
   const loggedIn = Boolean(me?.logged_in);
-  const showThemeManage = loggedIn;
   const showColorPicker = loggedIn;
   const showSyncWarning = failureStreak >= 2;
   const hiddenTabIndex = collapsed ? -1 : undefined;
@@ -137,17 +135,6 @@ export function FloatingControls({
                   </button>
                 )}
               </>
-            )}
-            {showThemeManage && (
-              <Link
-                to="/theme-manage"
-                aria-label="主题设置"
-                title="主题设置"
-                tabIndex={hiddenTabIndex}
-                className="control-button grid h-9 w-9 place-items-center"
-              >
-                <SlidersHorizontal size={16} />
-              </Link>
             )}
             {showAdmin && (
               <a

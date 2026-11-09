@@ -1,8 +1,8 @@
 {
   "name": "junimo",
-  "short": "Junimo",
+  "short": "junimo",
   "description": "享受农场主题的悠闲时光",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "author": "Planck",
   "url": "https://github.com/vaspike/junimo",
   "preview": "preview.png",
@@ -122,13 +122,6 @@
         "help": "在顶部总览卡片上显示流量、带宽与资产的趣味评级标签。"
       },
       {
-        "key": "showPingChart",
-        "name": "显示实例 Ping 延迟图表",
-        "type": "switch",
-        "default": true,
-        "help": "在实例详情页提供 Ping 延迟与丢包历史图表标签页。"
-      },
-      {
         "key": "showConnections",
         "name": "展示连接数指标",
         "type": "switch",
@@ -162,6 +155,37 @@
         "type": "switch",
         "default": true,
         "help": "紧凑视图卡片内显示系统 Uptime 运行天数。"
+      },
+      {
+        "name": "Ping 延迟监控",
+        "type": "title"
+      },
+      {
+        "key": "enableHomepageMultiPing",
+        "name": "启用首页三网延迟展示",
+        "type": "switch",
+        "default": false,
+        "help": "开启后，首页大卡与紧凑卡将展示三网（如电信、联通、移动）Ping 延迟与丢包柱状图。"
+      },
+      {
+        "key": "homepageMultiPingTaskIds",
+        "name": "首页三网 Ping 任务",
+        "type": "pingtasks",
+        "help": "选择首页三网展示的 3 个 Ping 任务（按顺序分别对应电信、联通、移动三条线路；若只选择 1 个则作为所有节点的单线路延迟展示）。"
+      },
+      {
+        "key": "fakePingForUnbound",
+        "name": "未绑定节点显示模拟延迟",
+        "type": "switch",
+        "default": false,
+        "help": "开启后，未绑定 Ping 任务的在线节点显示模拟延迟条，保持各卡片高度和排版整齐。"
+      },
+      {
+        "key": "showPingChart",
+        "name": "显示实例详情 Ping 图表",
+        "type": "switch",
+        "default": true,
+        "help": "在实例详情页提供 Ping 延迟与丢包历史图表标签页。"
       },
       {
         "name": "背景与视觉定制",

@@ -39,8 +39,8 @@ function msUntilNextFarmBoundary(now: Date = new Date()): number {
   return next.getTime() - now.getTime();
 }
 
-const APPEARANCE_STORAGE_KEY = "appearance";
-const APPEARANCE_DEFAULT_STORAGE_KEY = "appearance_default";
+const APPEARANCE_STORAGE_KEY = "junimo:appearance";
+const APPEARANCE_DEFAULT_STORAGE_KEY = "junimo:appearance_default";
 const SYSTEM_DARK_QUERY = "(prefers-color-scheme: dark)";
 
 interface PrefsState {

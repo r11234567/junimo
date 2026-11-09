@@ -8,11 +8,26 @@ function normalizeNodeIdentityValue(value: unknown): string {
 
 // 把用户输入(字符串按换行/逗号/分号分隔,或已是数组)归一化成去重、去空的列表。
 export function normalizeNodeIdentityList(value: unknown): string[] {
-  const rawValues = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? value.split(/[\n,，;；]+/)
-      : [];
+  let rawValues: unknown[] = [];
+  if (Array.isArray(value)) {
+    rawValues = value;
+  } else if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          rawValues = parsed;
+        } else {
+          rawValues = trimmed.split(/[\n,，;；]+/);
+        }
+      } catch {
+        rawValues = trimmed.split(/[\n,，;；]+/);
+      }
+    } else {
+      rawValues = trimmed.split(/[\n,，;；]+/);
+    }
+  }
 
   return Array.from(
     new Set(

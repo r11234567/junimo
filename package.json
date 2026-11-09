@@ -1,7 +1,7 @@
 {
   "name": "junimo",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "description": "junimo",
   "author": "Planck",
@@ -21,7 +21,7 @@
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
     "@fontsource-variable/inter": "^5.2.5",
-    "@komari/proto": "github:r11234567/komari-proto#v0.1.28",
+    "@komari/proto": "github:r11234567/komari-proto#765c8cb744f886c937837b8d75a4ec3e5cc52723",
     "@tanstack/react-query": "^5.80.7",
     "clsx": "^2.1.1",
     "lucide-react": "^0.473.0",

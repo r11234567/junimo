@@ -278,6 +278,7 @@ function shallowEqualNodeInfo(a: NodeInfo, b: NodeInfo) {
     a.public_remark === b.public_remark &&
     a.traffic_limit === b.traffic_limit &&
     a.traffic_limit_type === b.traffic_limit_type &&
+    a.traffic_next_reset === b.traffic_next_reset &&
     a.created_at === b.created_at
     // updated_at 是未展示的心跳字段，不应触发整个节点列表重渲染。
   );

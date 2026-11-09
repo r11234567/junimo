@@ -136,12 +136,16 @@ const nodeInfoOf = (agent: AgentSummary) => {
     traffic_limit: asNumber(basic?.trafficLimitBytes),
     traffic_limit_type: basic?.trafficLimitType ?? "",
     traffic_next_reset:
+      isoOf(agent.trafficAccounting?.nextReset) ||
       isoOf(
-        (agent as unknown as { trafficAccounting?: { nextReset?: Timestamp } })
-          .trafficAccounting?.nextReset,
+        (agent as unknown as { traffic_accounting?: { next_reset?: Timestamp } })
+          ?.traffic_accounting?.next_reset,
       ) ||
       isoOf(
         (basic as unknown as { trafficNextReset?: Timestamp })?.trafficNextReset,
+      ) ||
+      isoOf(
+        (basic as unknown as { traffic_next_reset?: Timestamp })?.traffic_next_reset,
       ) ||
       "",
     // ListAgents 按站点的「向访客展示 IP」设置决定是否下发，管理员拿到完整值。

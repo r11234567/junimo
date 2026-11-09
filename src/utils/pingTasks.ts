@@ -13,10 +13,23 @@ function parseTaskId(taskId: string) {
 }
 
 export function normalizeHomepageMultiPingTaskIds(value: unknown): number[] {
-  if (!Array.isArray(value)) return [];
+  let list = value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        list = JSON.parse(trimmed);
+      } catch {
+        list = trimmed.split(/[\n,，;；]+/);
+      }
+    } else {
+      list = trimmed.split(/[\n,，;；]+/);
+    }
+  }
+  if (!Array.isArray(list)) return [];
 
   const normalized: number[] = [];
-  for (const raw of value) {
+  for (const raw of list) {
     const taskId =
       typeof raw === "number" && Number.isSafeInteger(raw) && raw > 0
         ? raw
