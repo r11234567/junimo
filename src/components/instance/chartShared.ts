@@ -5,6 +5,8 @@ import type uPlot from "uplot";
 // 两者都取自这一处单一来源，避免 hex 值在两个图表间漂移。
 export const CHART_PALETTE = {
   cpu: "#5d88ff",
+  gpu: "#00b4d8",
+  gpuMem: "#7209b7",
   memory: "#a35cf5",
   disk: "#f1873d",
   success: "#61c08f",

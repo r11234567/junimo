@@ -99,6 +99,13 @@ function emptyMetrics(info: NodeInfo, online: boolean | null): NodeMetrics {
   return {
     online,
     cpuPct: 0,
+    hasGpu: false,
+    gpuPct: 0,
+    gpuMemUsed: 0,
+    gpuMemTotal: 0,
+    gpuMemPct: 0,
+    gpuName: info.gpu_name || "",
+    gpuCount: 0,
     ramUsed: 0,
     ramTotal: info.mem_total,
     ramPct: 0,
@@ -169,10 +176,22 @@ function mergeRealtime(
     rt.network?.totalUp ?? 0,
     rt.network?.totalDown ?? 0,
   );
+  const gpu = rt.gpu;
+  const hasGpu = Boolean(gpu);
+  const gpuMemTotal = gpu?.memTotal ?? 0;
+  const gpuMemUsed = gpu?.memUsed ?? 0;
+  const gpuMemPct = gpuMemTotal > 0 ? (gpuMemUsed / gpuMemTotal) * 100 : 0;
 
   return {
     online,
     cpuPct: rt.cpu?.usage ?? 0,
+    hasGpu: hasGpu || (metrics.hasGpu && gpu === undefined && online === false),
+    gpuPct: gpu?.usage ?? (metrics.hasGpu ? metrics.gpuPct : 0),
+    gpuMemUsed: gpuMemUsed || (metrics.hasGpu ? metrics.gpuMemUsed : 0),
+    gpuMemTotal: gpuMemTotal || (metrics.hasGpu ? metrics.gpuMemTotal : 0),
+    gpuMemPct: gpuMemPct || (metrics.hasGpu ? metrics.gpuMemPct : 0),
+    gpuName: gpu?.name || metrics.gpuName || "",
+    gpuCount: gpu?.count ?? metrics.gpuCount ?? 0,
     ramUsed,
     ramTotal,
     ramPct: ramTotal > 0 ? (ramUsed / ramTotal) * 100 : 0,
@@ -200,6 +219,13 @@ function shallowEqualMetrics(a: NodeMetrics, b: NodeMetrics) {
   return (
     a.online === b.online &&
     a.cpuPct === b.cpuPct &&
+    a.hasGpu === b.hasGpu &&
+    a.gpuPct === b.gpuPct &&
+    a.gpuMemUsed === b.gpuMemUsed &&
+    a.gpuMemTotal === b.gpuMemTotal &&
+    a.gpuMemPct === b.gpuMemPct &&
+    a.gpuName === b.gpuName &&
+    a.gpuCount === b.gpuCount &&
     a.ramUsed === b.ramUsed &&
     a.ramTotal === b.ramTotal &&
     a.ramPct === b.ramPct &&
@@ -515,6 +541,81 @@ export function resolveFlatConnectionsTcp(payload: RealtimePayload): number {
   return Math.max(0, asNumber(payload.connections) - asNumber(payload.connections_udp));
 }
 
+function normalizeGpu(
+  payload: Record<string, unknown>,
+  meta: NodeInfo,
+): NodeRealtime["gpu"] | undefined {
+  if (payload.gpu && typeof payload.gpu === "object") {
+    const g = payload.gpu as Record<string, unknown>;
+    if ("usage" in g || "memUsed" in g || "memTotal" in g) {
+      return {
+        usage: asNumber(g.usage),
+        memUsed: asNumber(g.memUsed),
+        memTotal: asNumber(g.memTotal),
+        count: asNumber(g.count, 1),
+        name: typeof g.name === "string" ? g.name : meta.gpu_name,
+      };
+    }
+    if ("average_usage" in g || "detailed_info" in g || "count" in g) {
+      const detailed = Array.isArray(g.detailed_info)
+        ? (g.detailed_info as Array<Record<string, unknown>>)
+        : [];
+      const memTotal = detailed.reduce(
+        (acc, d) => acc + asNumber(d.memory_total ?? d.memoryTotalBytes),
+        0,
+      );
+      const memUsed = detailed.reduce(
+        (acc, d) => acc + asNumber(d.memory_used ?? d.memoryUsedBytes),
+        0,
+      );
+      const usage = asNumber(g.average_usage);
+      const count = asNumber(g.count, detailed.length || 1);
+      const name =
+        (detailed[0] && typeof detailed[0].name === "string"
+          ? detailed[0].name
+          : "") || meta.gpu_name;
+      return { usage, memUsed, memTotal, count, name };
+    }
+  }
+
+  if (
+    payload.gpu_detailed_info &&
+    Array.isArray(payload.gpu_detailed_info) &&
+    payload.gpu_detailed_info.length > 0
+  ) {
+    const detailed = payload.gpu_detailed_info as Array<Record<string, unknown>>;
+    const memTotal = detailed.reduce(
+      (acc, d) => acc + asNumber(d.memory_total ?? d.memoryTotalBytes),
+      0,
+    );
+    const memUsed = detailed.reduce(
+      (acc, d) => acc + asNumber(d.memory_used ?? d.memoryUsedBytes),
+      0,
+    );
+    const usage = asNumber(payload.gpu_average_usage ?? payload.gpu);
+    const name =
+      (detailed[0] && typeof detailed[0].name === "string"
+        ? detailed[0].name
+        : "") || meta.gpu_name;
+    return { usage, memUsed, memTotal, count: detailed.length, name };
+  }
+
+  if (typeof payload.gpu === "number" || typeof payload.gpu_average_usage === "number") {
+    const usage = asNumber(payload.gpu ?? payload.gpu_average_usage);
+    const memTotal = asNumber(payload.gpu_mem_total ?? payload.gpu_memory_total);
+    const memUsed = asNumber(payload.gpu_mem ?? payload.gpu_memory_used);
+    return {
+      usage,
+      memUsed,
+      memTotal,
+      count: 1,
+      name: meta.gpu_name,
+    };
+  }
+
+  return undefined;
+}
+
 function normalizeRealtime(
   raw: unknown,
   meta: NodeInfo,
@@ -535,9 +636,12 @@ function normalizeRealtime(
     Object.keys(ram).length > 0 ||
     Object.keys(network).length > 0;
 
+  const gpu = normalizeGpu(payload, meta);
+
   if (hasNestedShape) {
     return {
       cpu: { usage: asNumber(cpu.usage) },
+      gpu,
       ram: {
         total: asNumber(ram.total, metrics.ramTotal || meta.mem_total),
         used: asNumber(ram.used),
@@ -573,6 +677,7 @@ function normalizeRealtime(
 
   return {
     cpu: { usage: asNumber(payload.cpu) },
+    gpu,
     ram: {
       total: asNumber(payload.ram_total, metrics.ramTotal || meta.mem_total),
       used: asNumber(payload.ram),

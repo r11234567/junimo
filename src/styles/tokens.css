@@ -28,6 +28,8 @@
 
   --progress-bg: #e4e4e7;
   --progress-cpu: #3b82f6;
+  --progress-gpu: #06b6d4;
+  --progress-gpu-memory: #8b5cf6;
   --progress-memory: #8b5cf6;
   --progress-swap: #6366f1;
   --progress-disk: #e97b35;
@@ -117,6 +119,8 @@
 
   --progress-bg: color-mix(in srgb, #343b45, #24282e calc(var(--dark-depth, 0) * 1%));
   --progress-cpu: #539bf5;
+  --progress-gpu: #22d3ee;
+  --progress-gpu-memory: #c084fc;
   --progress-memory: #b083f0;
   --progress-swap: #986ee2;
   --progress-disk: #e0823d;

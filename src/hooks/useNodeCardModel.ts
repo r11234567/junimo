@@ -16,6 +16,7 @@ import {
   formatBytes,
   formatByteRate,
   formatExpireDays,
+  formatTrafficResetRemaining,
   formatUptimeDays,
   joinDisplayParts,
   parseTags,
@@ -221,12 +222,14 @@ export function useNodeCardModel(
     const trafficColor = trafficUsage.unlimited
       ? "var(--status-success)"
       : trafficUsageColor(trafficUsage.fraction);
+    const resetRemaining = formatTrafficResetRemaining(meta.traffic_next_reset);
     const traffic: TrafficDisplay = {
       fraction: trafficUsage.fraction,
       color: trafficColor,
       remainingLabel: trafficUsage.unlimited ? "∞" : formatBytes(trafficUsage.remaining),
       detail: `${trafficUsedLabel} / ${trafficLimitLabel}`,
       typeLabel: trafficTypeLabel(meta.traffic_limit_type),
+      resetRemaining,
     };
 
     return {

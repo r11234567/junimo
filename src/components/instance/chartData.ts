@@ -185,6 +185,7 @@ export function insertMetricGapSentinels(
     options?.defaultInterval ?? detectTypicalIntervalSeconds(existingTimes);
   const toleranceRatio = options?.matchToleranceRatio ?? 0.25;
   const sentinels = new Map<number, TimedMetricPoint>();
+  const gapsByKey = new Map<string, Array<{ start: number; end: number }>>();
 
   for (const key of keys) {
     const validTimes = sortedPoints
@@ -204,38 +205,76 @@ export function insertMetricGapSentinels(
       GAP_BREAK_MAX_SECONDS,
       Math.max(GAP_BREAK_MIN_SECONDS, interval * GAP_BREAK_INTERVAL_MULTIPLIER),
     );
+    const taskGaps: Array<{ start: number; end: number }> = [];
+
     for (let index = 1; index < validTimes.length; index += 1) {
       const previous = validTimes[index - 1];
       const current = validTimes[index];
       if (current - previous <= breakThreshold) continue;
 
-      // 一个 null 就足以断线。把当前 task 在 gap 内标为断开：若此处已有别的 task 的 anchor，
-      // 就把 null 设到它上面 (不新建近重复列)；否则加一个本 task 的哨兵——合并而非覆盖，这样多个
-      // task 同时中断也都能保留。每个 gap 有上限，避免长时间中断把点数撑爆。
-      let added = 0;
-      for (
-        let expected = previous + interval;
-        expected < current - tolerance && added < MAX_SENTINELS_PER_GAP;
-        expected += interval
-      ) {
-        const nearIdx = findPointNearTime(existingTimes, expected, tolerance);
+      taskGaps.push({ start: previous, end: current });
+
+      const startSentinel = previous + interval;
+      const endSentinel = current - interval;
+
+      const addOrSetSentinel = (time: number) => {
+        const nearIdx = findPointNearTime(existingTimes, time, tolerance);
         if (nearIdx >= 0) {
           sortedPoints[nearIdx][key] = null;
         } else {
-          const sentinel = sentinels.get(expected) ?? { time: expected };
+          const sentinel = sentinels.get(time) ?? { time };
           sentinel[key] = null;
-          sentinels.set(expected, sentinel);
+          sentinels.set(time, sentinel);
         }
+      };
+
+      // 前端哨兵：最多 MAX_SENTINELS_PER_GAP 个
+      let added = 0;
+      for (
+        let expected = startSentinel;
+        expected < current - tolerance && added < MAX_SENTINELS_PER_GAP;
+        expected += interval
+      ) {
+        addOrSetSentinel(expected);
         added += 1;
+      }
+
+      // 后端哨兵：确保长空缺在重连前也有哨兵，使 uPlot 的 clip 能够延伸到整段空缺的末端
+      if (endSentinel > startSentinel + tolerance && endSentinel < current - tolerance) {
+        addOrSetSentinel(endSentinel);
+      }
+    }
+
+    if (taskGaps.length > 0) {
+      gapsByKey.set(key, taskGaps);
+    }
+  }
+
+  const merged = normalizePoints([...sortedPoints, ...sentinels.values()], true).points;
+
+  // 关键修复：当某个 task 在 [start, end] 发生中断时，该区间内由其他 task 或哨兵产生的所有 anchor，
+  // 必须全部标记为 null（而非 undefined），否则 uPlot 在遇到 undefined（非 null）时会立即停止断点 clip，
+  // 从而在后续直到 reconnect 的数十个 anchor 之间画出平直虚连线。
+  if (gapsByKey.size > 0) {
+    for (const point of merged) {
+      for (const [key, gaps] of gapsByKey.entries()) {
+        const configuredInterval = intervals.get(key);
+        const interval =
+          typeof configuredInterval === "number" && configuredInterval > 0
+            ? configuredInterval
+            : defaultInterval;
+        const tolerance = Math.max(1, interval * toleranceRatio);
+        for (const gap of gaps) {
+          if (point.time > gap.start + tolerance && point.time < gap.end - tolerance) {
+            point[key] = null;
+            break;
+          }
+        }
       }
     }
   }
 
-  if (sentinels.size === 0) {
-    return sortedPoints;
-  }
-
-  return normalizePoints([...sortedPoints, ...sentinels.values()], true).points;
+  return merged;
 }
 
 export function interpolateMetricGaps(

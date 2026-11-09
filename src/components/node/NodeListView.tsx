@@ -294,8 +294,21 @@ const NodeRow = memo(function NodeRow({ uuid }: { uuid: string }) {
               {node.name}
             </span>
           </div>
-          {(renewalPrice || footerTags.length > 0) && (
+          {(renewalPrice || footerTags.length > 0 || node.hasGpu) && (
             <div className="node-list-chips" title={footerTags.length > 0 ? joinTagTitle(footerTags) : undefined}>
+              {node.hasGpu && (
+                <span
+                  className="dstatus-tag-chip"
+                  style={{
+                    background: "color-mix(in srgb, var(--progress-gpu, #06b6d4) 16%, transparent)",
+                    color: "var(--progress-gpu, #06b6d4)",
+                    fontWeight: 600,
+                  }}
+                  title={node.gpuName ? `GPU: ${node.gpuName} (${node.gpuPct.toFixed(1)}%)` : `GPU: ${node.gpuPct.toFixed(1)}%`}
+                >
+                  GPU {node.gpuPct.toFixed(0)}%
+                </span>
+              )}
               {renewalPrice && (
                 <span className="dstatus-price-chip">
                   <CircleDollarSign size={12} strokeWidth={2.2} />
@@ -361,15 +374,25 @@ const NodeRow = memo(function NodeRow({ uuid }: { uuid: string }) {
 
       <div
         className="node-list-cell col-traffic"
-        title={`剩余 ${traffic.remainingLabel} · ${traffic.detail}`}
+        title={`剩余 ${traffic.remainingLabel} · ${traffic.detail}${traffic.resetRemaining ? ` · 重置${traffic.resetRemaining}` : ""}`}
       >
         <div className="node-list-traffic-rows">
           <StackLine icon={<ArrowUp size={11} strokeWidth={2.1} />} value={formatBytes(node.trafficUp)} />
           <StackLine icon={<ArrowDown size={11} strokeWidth={2.1} />} value={formatBytes(node.trafficDown)} />
         </div>
-        <span className="node-list-traffic-quota" style={{ color: traffic.color }}>
-          {usedPct}
-        </span>
+        <div className="flex flex-col items-end">
+          <span className="node-list-traffic-quota" style={{ color: traffic.color }}>
+            {usedPct}
+          </span>
+          {traffic.resetRemaining && (
+            <span
+              className="text-[10px] opacity-75 whitespace-nowrap"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {traffic.resetRemaining}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="node-list-cell col-net">

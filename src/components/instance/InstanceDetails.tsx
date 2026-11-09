@@ -10,6 +10,7 @@ import {
 } from "./instanceTodayTrafficFormat";
 import {
   formatBytes,
+  formatTrafficResetRemaining,
   formatUptimeDays,
 } from "@/utils/format";
 import { resolveTrafficUsage } from "@/utils/traffic";
@@ -53,6 +54,7 @@ export function InstanceDetails({
     metrics.trafficDown,
     meta.traffic_limit,
   );
+  const resetRemaining = formatTrafficResetRemaining(meta.traffic_next_reset);
   const lastUpdated =
     metrics.updatedAt > 0 ? TIME_FORMATTER.format(metrics.updatedAt) : "—";
   const trimmedName = meta.name?.trim();
@@ -76,12 +78,24 @@ export function InstanceDetails({
           />
           <InfoRow label="架构" value={meta.arch || "—"} />
           <InfoRow label="虚拟化" value={meta.virtualization || "—"} />
-          <InfoRow label="显卡" value={meta.gpu_name || "—"} />
+          <InfoRow label="显卡" value={meta.gpu_name || (metrics.hasGpu && metrics.gpuName ? metrics.gpuName : "—")} />
           <InfoRow label="操作系统" value={meta.os || "—"} />
         </div>
 
         <div className="instance-info-group">
           <div className="instance-info-group-title">资源</div>
+          {metrics.hasGpu && (
+            <InfoRow
+              label="GPU"
+              value={`${metrics.gpuPct.toFixed(1)}%${metrics.gpuName ? ` (${metrics.gpuName})` : ""}`}
+            />
+          )}
+          {metrics.hasGpu && metrics.gpuMemTotal > 0 && (
+            <InfoRow
+              label="显存"
+              value={`${formatBytes(metrics.gpuMemUsed)} / ${formatBytes(metrics.gpuMemTotal)} (${metrics.gpuMemPct.toFixed(1)}%)`}
+            />
+          )}
           <InfoRow label="内存" value={`${formatBytes(metrics.ramUsed)} / ${formatBytes(metrics.ramTotal)}`} />
           <InfoRow
             label="Swap"
@@ -152,8 +166,14 @@ export function InstanceDetails({
                   </div>
                   <span className="instance-info-note">
                     {`${formatBytes(trafficUsage.used)} / ${formatBytes(meta.traffic_limit)}`}
+                    {resetRemaining && ` · 重置${resetRemaining}`}
                   </span>
                 </>
+              )}
+              {!(meta.traffic_limit > 0) && resetRemaining && (
+                <span className="instance-info-note">
+                  {`重置${resetRemaining}`}
+                </span>
               )}
             </div>
           </div>

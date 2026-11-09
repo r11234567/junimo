@@ -2,6 +2,9 @@ import type { LoadRecord } from "@/types/komari";
 
 const LOAD_METRIC_FIELD = {
   "cpu.usage": "cpu",
+  "gpu.usage": "gpu",
+  "gpu.memory.used": "gpu_mem",
+  "gpu.memory.total": "gpu_mem_total",
   "memory.used": "ram",
   "swap.used": "swap",
   "load.average": "load",
@@ -63,7 +66,6 @@ export interface LoadMetricSeries {
 function emptyLoadRecord(client: string, time: string): LoadRecord {
   return {
     cpu: 0,
-    gpu: 0,
     ram: 0,
     ram_total: 0,
     swap: 0,

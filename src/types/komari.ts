@@ -61,6 +61,9 @@ export const NodeInfoSchema = z
     public_remark: looseString.default(""),
     traffic_limit: looseNumber.default(0),
     traffic_limit_type: looseString.default(""),
+    traffic_next_reset: looseString.optional(),
+    traffic_reset_cycle: looseString.optional(),
+    traffic_reset_day: looseNumber.optional(),
     ipv4: looseString.default(""),
     ipv6: looseString.default(""),
     created_at: looseString.default(""),
@@ -72,6 +75,13 @@ export type NodeInfo = z.output<typeof NodeInfoSchema>;
 
 export interface NodeRealtime {
   cpu: { usage: number };
+  gpu?: {
+    usage: number;
+    memUsed: number;
+    memTotal: number;
+    count?: number;
+    name?: string;
+  };
   ram: { total: number; used: number };
   swap: { total: number; used: number };
   load: { load1: number; load5: number; load15: number };
@@ -87,6 +97,13 @@ export interface NodeRealtime {
 export interface NodeMetrics {
   online: boolean | null;
   cpuPct: number;
+  hasGpu: boolean;
+  gpuPct: number;
+  gpuMemUsed: number;
+  gpuMemTotal: number;
+  gpuMemPct: number;
+  gpuName: string;
+  gpuCount: number;
   ramUsed: number;
   ramTotal: number;
   ramPct: number;
@@ -221,7 +238,9 @@ export type Me = z.output<typeof MeSchema>;
 export const LoadRecordSchema = z
   .object({
     cpu: z.number().default(0),
-    gpu: z.number().default(0),
+    gpu: z.number().optional(),
+    gpu_mem: z.number().optional(),
+    gpu_mem_total: z.number().optional(),
     ram: z.number().default(0),
     ram_total: z.number().default(0),
     swap: z.number().default(0),

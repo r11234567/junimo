@@ -423,6 +423,26 @@ function CompactNodeVitals({
         fraction={node.cpuPct / 100}
         color="var(--progress-cpu)"
       />
+      {node.hasGpu && (
+        <CompactGauge
+          icon={<Cpu size={12} />}
+          label="GPU"
+          value={formatCompactPercent(node.gpuPct)}
+          detail={node.gpuName || (node.gpuCount > 1 ? `${node.gpuCount} 核心` : "GPU")}
+          fraction={node.gpuPct / 100}
+          color="var(--progress-gpu, #06b6d4)"
+        />
+      )}
+      {node.hasGpu && node.gpuMemTotal > 0 && (
+        <CompactGauge
+          icon={<MemoryStick size={12} />}
+          label="显存"
+          value={formatCompactPercent(node.gpuMemPct)}
+          detail={`${formatBytes(node.gpuMemUsed)} / ${formatBytes(node.gpuMemTotal)}`}
+          fraction={node.gpuMemPct / 100}
+          color="var(--progress-gpu-memory, #8b5cf6)"
+        />
+      )}
       <CompactGauge
         icon={<MemoryStick size={12} />}
         label="内存"
@@ -587,7 +607,7 @@ function CompactTrafficBar({
     <div
       className="compact-node-traffic"
       style={style}
-      title={`流量 · ${traffic.typeLabel} · ${traffic.detail}${uptimeLabel ? ` · ${uptimeLabel}` : ""}`}
+      title={`流量 · ${traffic.typeLabel} · ${traffic.detail}${traffic.resetRemaining ? ` · 重置${traffic.resetRemaining}` : ""}${uptimeLabel ? ` · ${uptimeLabel}` : ""}`}
     >
       <div className={clsx("compact-node-traffic-body", uptimeLabel && "has-uptime")}>
         {uptimeLabel ? (
@@ -595,6 +615,11 @@ function CompactTrafficBar({
             <span className="compact-node-traffic-label">
               <Database size={12} strokeWidth={2.1} />
               <span>流量</span>
+              {traffic.resetRemaining && (
+                <span className="compact-node-traffic-reset text-[10px] font-normal opacity-75 ml-1">
+                  ({traffic.resetRemaining})
+                </span>
+              )}
             </span>
             <div className="compact-node-gauge-track" aria-hidden />
             <span className="compact-node-traffic-uptime">{uptimeLabel}</span>
@@ -606,6 +631,11 @@ function CompactTrafficBar({
               <span className="compact-node-traffic-label">
                 <Database size={12} strokeWidth={2.1} />
                 <span>流量</span>
+                {traffic.resetRemaining && (
+                  <span className="compact-node-traffic-reset text-[10px] font-normal opacity-75 ml-1">
+                    ({traffic.resetRemaining})
+                  </span>
+                )}
               </span>
               <span className="compact-node-traffic-value">{traffic.detail}</span>
             </div>

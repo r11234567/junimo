@@ -1,9 +1,238 @@
 {
   "name": "junimo",
   "short": "Junimo",
-  "description": "junimo",
+  "description": "享受农场主题的悠闲时光",
   "version": "2.0.4",
   "author": "Planck",
   "url": "https://github.com/vaspike/junimo",
-  "preview": "preview.png"
+  "preview": "preview.png",
+  "configuration": {
+    "type": "managed",
+    "name": "Junimo 主题设置",
+    "icon": "Palette",
+    "data": [
+      {
+        "name": "基础外观",
+        "type": "title"
+      },
+      {
+        "key": "defaultAppearance",
+        "name": "默认外观模式",
+        "type": "select",
+        "options": "farm,system,light,dark",
+        "default": "farm",
+        "help": "设置访客默认外观风格：farm（像素农场）、system（跟随系统）、light（浅色）、dark（深色）。"
+      },
+      {
+        "key": "desktopNodeViewMode",
+        "name": "桌面端默认视图",
+        "type": "select",
+        "options": "large,compact,mini,list",
+        "default": "large",
+        "help": "桌面端默认卡片布局：large（大卡片）、compact（紧凑卡）、mini（迷你卡）、list（表格列表）。"
+      },
+      {
+        "key": "mobileNodeViewMode",
+        "name": "移动端默认视图",
+        "type": "select",
+        "options": "compact,large,mini",
+        "default": "compact",
+        "help": "移动端默认卡片布局：compact（紧凑卡）、large（大卡片）、mini（迷你卡）。"
+      },
+      {
+        "key": "enableAdminButton",
+        "name": "显示管理入口快捷按钮",
+        "type": "switch",
+        "default": true,
+        "help": "在首页浮动控制栏中显示管理后台登录/跳转入口。"
+      },
+      {
+        "name": "主页面展示",
+        "type": "title"
+      },
+      {
+        "key": "showHomeOverview",
+        "name": "显示首页顶部总览",
+        "type": "switch",
+        "default": true,
+        "help": "在首页顶部展示节点总数、在线数、总流量和实时上下行等指标总览卡。"
+      },
+      {
+        "key": "homeOverviewDensity",
+        "name": "总览卡密度",
+        "type": "select",
+        "options": "auto,full,compact",
+        "default": "auto",
+        "help": "顶部总览卡的密度风格：auto（跟随视图模式）、full（完整）、compact（压缩）。"
+      },
+      {
+        "key": "homeOverviewCollapsible",
+        "name": "总览卡支持折叠",
+        "type": "switch",
+        "default": false,
+        "help": "允许将顶部总览折叠为单行精简条，点击箭头可随时展开。"
+      },
+      {
+        "key": "showGroupTabs",
+        "name": "显示节点分组标签页",
+        "type": "switch",
+        "default": true,
+        "help": "在首页顶部以 Tab 形式展示各节点分组。"
+      },
+      {
+        "key": "showRegionBar",
+        "name": "显示地区分布条",
+        "type": "switch",
+        "default": true,
+        "help": "在首页显示节点所属国家/地区的统计分布条。"
+      },
+      {
+        "key": "showCardGroup",
+        "name": "卡片内显示分组名称",
+        "type": "switch",
+        "default": true,
+        "help": "在每张节点卡片顶部标签中显示该节点所属的分组。"
+      },
+      {
+        "key": "enableHomeSort",
+        "name": "启用首页节点排序",
+        "type": "switch",
+        "default": true,
+        "help": "在首页提供按名称、流量、速率、价格等维度排序控件。"
+      },
+      {
+        "key": "showCostSummary",
+        "name": "显示资产费用概览",
+        "type": "switch",
+        "default": true,
+        "help": "在顶部总览中显示月付/年付费用的换算统计。"
+      },
+      {
+        "key": "showCostSummaryFloatingButton",
+        "name": "显示资产悬浮快捷按钮",
+        "type": "switch",
+        "default": true,
+        "help": "在右下角提供快速打开费用与资产报表的快捷悬浮按钮。"
+      },
+      {
+        "key": "showOverviewRatings",
+        "name": "显示总览评级段位",
+        "type": "switch",
+        "default": true,
+        "help": "在顶部总览卡片上显示流量、带宽与资产的趣味评级标签。"
+      },
+      {
+        "key": "showPingChart",
+        "name": "显示实例 Ping 延迟图表",
+        "type": "switch",
+        "default": true,
+        "help": "在实例详情页提供 Ping 延迟与丢包历史图表标签页。"
+      },
+      {
+        "key": "showConnections",
+        "name": "展示连接数指标",
+        "type": "switch",
+        "default": false,
+        "help": "在卡片中展示 TCP / UDP 连接数（需客户端 Agent 支持采集上报）。"
+      },
+      {
+        "key": "showTodayTrafficPopover",
+        "name": "启用今日流量悬浮卡",
+        "type": "switch",
+        "default": true,
+        "help": "鼠标悬停在卡片流量条上时展示今日流量增量与峰值速率弹窗。"
+      },
+      {
+        "key": "compactShowTrafficTotal",
+        "name": "紧凑卡展示累计流量",
+        "type": "switch",
+        "default": true,
+        "help": "紧凑视图卡片内显示该节点的已用/剩余流量配额。"
+      },
+      {
+        "key": "compactShowBilling",
+        "name": "紧凑卡展示账单周期",
+        "type": "switch",
+        "default": true,
+        "help": "紧凑视图卡片内显示节点的到期时间与计费周期。"
+      },
+      {
+        "key": "compactShowUptime",
+        "name": "紧凑卡展示在线时长",
+        "type": "switch",
+        "default": true,
+        "help": "紧凑视图卡片内显示系统 Uptime 运行天数。"
+      },
+      {
+        "name": "背景与视觉定制",
+        "type": "title"
+      },
+      {
+        "key": "enableBackgroundImage",
+        "name": "启用自定义背景图",
+        "type": "switch",
+        "default": true,
+        "help": "开启后将使用填写的背景图 URL 作为全局背景。"
+      },
+      {
+        "key": "backgroundImageInFarm",
+        "name": "农场模式应用自定义背景",
+        "type": "switch",
+        "default": true,
+        "help": "像素农场模式下是否叠加自定义背景图（开启后仍保留羊皮纸卡片风格）。"
+      },
+      {
+        "key": "backgroundImage",
+        "name": "桌面端背景图 URL",
+        "type": "string",
+        "default": "",
+        "help": "桌面端大屏背景图片地址，支持直链或随机图 API。"
+      },
+      {
+        "key": "backgroundImageMobile",
+        "name": "移动端背景图 URL",
+        "type": "string",
+        "default": "",
+        "help": "移动端背景图片地址，留空则复用桌面端背景图。"
+      },
+      {
+        "key": "backgroundAlignment",
+        "name": "背景对齐方式",
+        "type": "select",
+        "options": "center,top,bottom,left,right",
+        "default": "center",
+        "help": "背景图片在页面中的对齐锚点。"
+      },
+      {
+        "key": "surfaceOpacity",
+        "name": "卡片表面不透明度 (%)",
+        "type": "number",
+        "default": 86,
+        "help": "卡片表面材质不透明度（50-100），调低可呈现磨砂羊皮纸与背景交融效果。"
+      },
+      {
+        "key": "costRateApiUrl",
+        "name": "汇率数据接口",
+        "type": "string",
+        "default": "https://open.er-api.com/v6/latest/CNY",
+        "help": "用于计算多币种折算人民币月费的公共汇率 API 地址。"
+      },
+      {
+        "name": "节点管理与筛选",
+        "type": "title"
+      },
+      {
+        "key": "hiddenNodes",
+        "name": "隐藏节点列表",
+        "type": "nodes",
+        "help": "选择在前台大屏与主页中向访客隐藏的节点。"
+      },
+      {
+        "key": "costIgnoredNodes",
+        "name": "不计入资产的节点",
+        "type": "nodes",
+        "help": "选择不参与费用汇率折算与资产统计的节点（例如测试机或公益机）。"
+      }
+    ]
+  }
 }

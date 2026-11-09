@@ -218,6 +218,34 @@ describe("insertMetricGapSentinels — three-state ping semantics", () => {
     expect(p120!.A).toBeNull();
     expect(p120!.B).toBeNull();
   });
+
+  it("ensures long out-of-phase outage marks all intermediate anchors as null", () => {
+    // 两个错相采样任务在经历长达 5000 秒的中断时，中间所有 anchor 对处于中断的 task 必须为 null，
+    // 不能落入 undefined，从而避免 uPlot 提前终止 gap clip 画出虚假连线。
+    const points: TimedMetricPoint[] = [
+      { time: 0, A: 10, B: 20 },
+      { time: 60, A: 11 },
+      { time: 90, B: 21 },
+      { time: 5090, A: 15 },
+      { time: 5120, B: 25 },
+    ];
+
+    const out = insertMetricGapSentinels(points, opts({ A: 60, B: 60 }));
+
+    // 检查在 90 到 5090 之间的每一个 anchor，A 都必须为 null（不能是 undefined）
+    const gapPointsForA = out.filter((p) => p.time > 90 && p.time < 5090);
+    expect(gapPointsForA.length).toBeGreaterThan(0);
+    for (const p of gapPointsForA) {
+      expect(p.A).toBeNull();
+    }
+
+    // 检查在 90 到 5120 之间的每一个 anchor，B 都必须为 null
+    const gapPointsForB = out.filter((p) => p.time > 90 && p.time < 5120);
+    expect(gapPointsForB.length).toBeGreaterThan(0);
+    for (const p of gapPointsForB) {
+      expect(p.B).toBeNull();
+    }
+  });
 });
 
 describe("downsampleAligned", () => {

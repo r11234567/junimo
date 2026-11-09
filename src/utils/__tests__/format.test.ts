@@ -7,6 +7,7 @@ import {
   formatExpireDays,
   formatOfflineDuration,
   formatTrafficRateLabel,
+  formatTrafficResetRemaining,
   formatUptimeDays,
   getExpireDaysRemaining,
   parseTags,
@@ -209,5 +210,34 @@ describe("formatOfflineDuration", () => {
 
   it("clamps negative drift to just-offline", () => {
     expect(formatOfflineDuration(NOW + 60_000, NOW).full).toBe("刚刚离线");
+  });
+});
+
+describe("formatTrafficResetRemaining", () => {
+  const NOW = Date.parse("2026-07-13T02:00:00Z");
+
+  it("returns null for missing, null, or invalid input", () => {
+    expect(formatTrafficResetRemaining(null, NOW)).toBeNull();
+    expect(formatTrafficResetRemaining("", NOW)).toBeNull();
+    expect(formatTrafficResetRemaining("invalid-date", NOW)).toBeNull();
+  });
+
+  it("returns '重置中' when next reset is in the past", () => {
+    expect(formatTrafficResetRemaining("2026-07-13T01:59:00Z", NOW)).toBe("重置中");
+  });
+
+  it("formats remaining days and hours", () => {
+    const target = new Date(NOW + (5 * 24 + 3) * 3_600_000).toISOString();
+    expect(formatTrafficResetRemaining(target, NOW)).toBe("还剩 5d 3h");
+  });
+
+  it("formats remaining hours only when under a day", () => {
+    const target = new Date(NOW + 8 * 3_600_000).toISOString();
+    expect(formatTrafficResetRemaining(target, NOW)).toBe("还剩 8h");
+  });
+
+  it("formats '< 1h' when under one hour", () => {
+    const target = new Date(NOW + 25 * 60_000).toISOString();
+    expect(formatTrafficResetRemaining(target, NOW)).toBe("还剩 < 1h");
   });
 });

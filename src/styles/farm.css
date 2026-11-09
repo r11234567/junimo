@@ -48,6 +48,8 @@
   /* 指标语义色不变，只把色相调成星露谷式的暖饱和，避免与羊皮纸底打架 */
   --progress-bg: #e3d0a0;
   --progress-cpu: #4a90d9;
+  --progress-gpu: #2a9d8f;
+  --progress-gpu-memory: #9c6644;
   --progress-memory: #9b6bd6;
   --progress-swap: #7a5fd0;
   --progress-disk: #d9832b;

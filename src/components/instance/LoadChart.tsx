@@ -44,6 +44,8 @@ const REALTIME_SAMPLE_LIMIT = 600;
 
 const CPU_KEYS = ["cpu"];
 const CPU_COLORS = [CHART_PALETTE.cpu];
+const GPU_KEYS = ["gpu", "gpuMem"];
+const GPU_COLORS = [CHART_PALETTE.gpu, CHART_PALETTE.gpuMem];
 const MEMORY_KEYS = ["ram", "swap"];
 const MEMORY_COLORS = [CHART_PALETTE.memory, CHART_PALETTE.warning];
 const DISK_KEYS = ["disk"];
@@ -56,6 +58,8 @@ const PROCESS_KEYS = ["process"];
 const PROCESS_COLORS = [CHART_PALETTE.warning];
 const SERIES_LABELS: Record<string, string> = {
   cpu: "CPU",
+  gpu: "GPU",
+  gpuMem: "显存",
   ram: "内存",
   swap: "Swap",
   disk: "磁盘",
@@ -67,6 +71,8 @@ const SERIES_LABELS: Record<string, string> = {
 };
 const LOAD_INTERPOLATE_KEYS = [
   "cpu",
+  "gpu",
+  "gpuMem",
   "ram",
   "swap",
   "disk",
@@ -94,6 +100,8 @@ function getHistoryRenderLimit(hours: number) {
 
 const DOWNSAMPLE_KEYS = [
   "cpu",
+  "gpu",
+  "gpuMem",
   "ram",
   "swap",
   "disk",
@@ -135,6 +143,8 @@ function pointFromNode(node: NodeMetrics): ChartPoint {
   return {
     time: node.updatedAt > 0 ? node.updatedAt / 1000 : Date.now() / 1000,
     cpu: node.cpuPct,
+    gpu: node.hasGpu ? node.gpuPct : null,
+    gpuMem: node.hasGpu && node.gpuMemTotal > 0 ? node.gpuMemPct : null,
     // total 为 0 表示该指标不存在(如无 Swap),填 null 让 uPlot 不画线,而不是画一条假的 0%。
     ram: node.ramTotal > 0 ? (node.ramUsed / node.ramTotal) * 100 : null,
     swap: node.swapTotal > 0 ? (node.swapUsed / node.swapTotal) * 100 : null,
@@ -434,9 +444,16 @@ export function LoadChart({
   const historyPoints = useMemo<ChartPoint[]>(() => {
     const rawPoints = historyRecords.map(({ record, time }) => {
       const totals = resolveLoadRecordTotals(record, totalFallbacks);
+      const gpuMemTotal = (record.gpu_mem_total ?? 0) > 0 ? record.gpu_mem_total! : 0;
+      const gpuMem =
+        gpuMemTotal > 0 && record.gpu_mem != null
+          ? (record.gpu_mem / gpuMemTotal) * 100
+          : null;
       return {
         time,
         cpu: record.cpu,
+        gpu: record.gpu ?? null,
+        gpuMem,
         ram: totals.ramTotal > 0 ? (record.ram / totals.ramTotal) * 100 : null,
         swap: totals.swapTotal > 0 ? (record.swap / totals.swapTotal) * 100 : null,
         disk: totals.diskTotal > 0 ? (record.disk / totals.diskTotal) * 100 : null,
@@ -491,6 +508,12 @@ export function LoadChart({
         ? null
         : historyCoverageLabel(data, points[0]?.time, points[points.length - 1]?.time),
     [data, isRealtime, points],
+  );
+
+  const hasGpuData = Boolean(
+    (node && node.hasGpu) ||
+    points.some((p) => p.gpu != null) ||
+    historyRecords.some(({ record }) => record.gpu != null || (record.gpu_mem ?? 0) > 0),
   );
 
   if (isLoading) {
@@ -578,6 +601,36 @@ export function LoadChart({
           axisKind="percent"
           xRange={requestedXRange}
         />
+        {hasGpuData && (
+          <ChartCard
+            icon={<Cpu size={13} />}
+            title="GPU"
+            uuid={uuid}
+            value={
+              isRealtime && node
+                ? `${node.gpuPct.toFixed(1)}%`
+                : `${(points[points.length - 1]?.gpu ?? 0).toFixed(1)}%`
+            }
+            note={
+              isRealtime && node
+                ? node.gpuMemTotal > 0
+                  ? `显存 ${formatBytes(node.gpuMemUsed)} / ${formatBytes(node.gpuMemTotal)}`
+                  : node.gpuName || "使用率"
+                : latestHistoryRecord && (latestHistoryRecord.gpu_mem_total ?? 0) > 0
+                  ? `显存 ${formatBytes(latestHistoryRecord.gpu_mem ?? 0)} / ${formatBytes(latestHistoryRecord.gpu_mem_total ?? 0)}`
+                  : "使用率"
+            }
+            points={points}
+            keys={GPU_KEYS}
+            colors={GPU_COLORS}
+            resolvedAppearance={resolvedAppearance}
+            rangeHours={hours}
+            unit="%"
+            spanGaps={connectNulls}
+            axisKind="percent"
+            xRange={requestedXRange}
+          />
+        )}
         <ChartCard
           icon={<MemoryStick size={13} />}
           title="内存"

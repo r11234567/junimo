@@ -143,6 +143,7 @@ export const NodeCard = memo(function NodeCard({
             remainingLabel={traffic.remainingLabel}
             detail={traffic.detail}
             typeLabel={traffic.typeLabel}
+            resetRemaining={traffic.resetRemaining}
           />
 
           {showConnections && (
@@ -275,6 +276,30 @@ function NodeMetricSection({
         redrawKey={redrawKey}
         paint="var(--progress-cpu)"
       />
+      {node.hasGpu && (
+        <MetricBar
+          icon={<Cpu size={13} strokeWidth={2} />}
+          label="GPU"
+          valueText={node.gpuPct.toFixed(1)}
+          unit="%"
+          detailText={node.gpuName || (node.gpuCount > 1 ? `${node.gpuCount} 核心` : undefined)}
+          fraction={node.gpuPct / 100}
+          redrawKey={redrawKey}
+          paint="var(--progress-gpu, #06b6d4)"
+        />
+      )}
+      {node.hasGpu && node.gpuMemTotal > 0 && (
+        <MetricBar
+          icon={<MemoryStick size={13} strokeWidth={2} />}
+          label="显存"
+          valueText={node.gpuMemPct.toFixed(1)}
+          unit="%"
+          detailText={`${formatBytes(node.gpuMemUsed)} / ${formatBytes(node.gpuMemTotal)}`}
+          fraction={node.gpuMemPct / 100}
+          redrawKey={redrawKey}
+          paint="var(--progress-gpu-memory, #8b5cf6)"
+        />
+      )}
       <MetricBar
         icon={<MemoryStick size={13} strokeWidth={2} />}
         label="内存"
@@ -388,22 +413,32 @@ const NodeTrafficQuota = memo(function NodeTrafficQuota({
   remainingLabel,
   detail,
   typeLabel,
+  resetRemaining,
 }: {
   litCount: number;
   remainingLabel: string;
   detail: string;
   typeLabel: string;
+  resetRemaining?: string | null;
 }) {
   return (
     <div
       className="card-metric-section traffic-quota"
-      title={`流量阈值 · ${typeLabel}`}
+      title={`流量阈值 · ${typeLabel}${resetRemaining ? ` · 重置${resetRemaining}` : ""}`}
     >
       <div className="traffic-quota-head">
         <span className="traffic-quota-label">
           <Database size={13} strokeWidth={2} />
           <span>剩余流量</span>
           <strong className="traffic-quota-remain">{remainingLabel}</strong>
+          {resetRemaining && (
+            <span
+              className="traffic-quota-reset text-[11px] font-normal opacity-75"
+              title={`重置时间：${resetRemaining}`}
+            >
+              ({resetRemaining})
+            </span>
+          )}
         </span>
         <span className="traffic-quota-usage">{detail}</span>
       </div>

@@ -176,6 +176,26 @@ function MiniVitals({
         fraction={node.cpuPct / 100}
         paint="var(--progress-cpu)"
       />
+      {node.hasGpu && (
+        <MiniMetricBar
+          icon={<Cpu size={12} strokeWidth={2} />}
+          label="GPU"
+          valueText={node.gpuPct.toFixed(node.gpuPct >= 10 ? 0 : 1)}
+          unit="%"
+          fraction={node.gpuPct / 100}
+          paint="var(--progress-gpu, #06b6d4)"
+        />
+      )}
+      {node.hasGpu && node.gpuMemTotal > 0 && (
+        <MiniMetricBar
+          icon={<MemoryStick size={12} strokeWidth={2} />}
+          label="显存"
+          valueText={node.gpuMemPct.toFixed(node.gpuMemPct >= 10 ? 0 : 1)}
+          unit="%"
+          fraction={node.gpuMemPct / 100}
+          paint="var(--progress-gpu-memory, #8b5cf6)"
+        />
+      )}
       <MiniMetricBar
         icon={<MemoryStick size={12} strokeWidth={2} />}
         label="内存"
@@ -237,10 +257,12 @@ function MiniFlow({
   node,
   upRate,
   downRate,
+  resetRemaining,
 }: {
   node: MiniNode;
   upRate: ByteRateDisplay;
   downRate: ByteRateDisplay;
+  resetRemaining?: string | null;
 }) {
   return (
     <div className="mini-node-flow">
@@ -264,12 +286,12 @@ function MiniFlow({
         <MiniFlowRow
           icon={<ArrowUp size={12} strokeWidth={2.2} />}
           value={formatBytes(node.trafficUp)}
-          title="累计上行"
+          title={`累计上行${resetRemaining ? ` · 重置${resetRemaining}` : ""}`}
         />
         <MiniFlowRow
           icon={<ArrowDown size={12} strokeWidth={2.2} />}
           value={formatBytes(node.trafficDown)}
-          title="累计下行"
+          title={`累计下行${resetRemaining ? ` · 重置${resetRemaining}` : ""}`}
         />
       </div>
     </div>
@@ -461,7 +483,12 @@ export const MiniNodeCard = memo(function MiniNodeCard({
         offlineDuration={offlineDuration}
       />
       <MiniVitals node={node} loadFraction={loadFraction} />
-      <MiniFlow node={node} upRate={upRate} downRate={downRate} />
+      <MiniFlow
+        node={node}
+        upRate={upRate}
+        downRate={downRate}
+        resetRemaining={model.traffic.resetRemaining}
+      />
       <MiniHealth
         ping={ping}
         pingBuckets={pingBuckets}

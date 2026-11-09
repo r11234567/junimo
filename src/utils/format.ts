@@ -195,6 +195,39 @@ export function formatExpireDays(
   return { value: "已过期", unit: "", tone };
 }
 
+/**
+ * 格式化流量重置剩余时间为 "还剩 Xd Yh" 或 "还剩 Yh"。
+ * 适配 komari draft PR 的 traffic_next_reset 字段。
+ */
+export function formatTrafficResetRemaining(
+  nextReset: string | number | null | undefined,
+  now = Date.now(),
+): string | null {
+  if (!nextReset) return null;
+  const targetMs =
+    typeof nextReset === "number"
+      ? nextReset > 1e11
+        ? nextReset
+        : nextReset * 1000
+      : Date.parse(String(nextReset));
+  if (!Number.isFinite(targetMs) || targetMs <= 0) return null;
+
+  const diffMs = targetMs - now;
+  if (diffMs <= 0) return "重置中";
+
+  const totalHours = Math.floor(diffMs / 3_600_000);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+
+  if (days > 0) {
+    return `还剩 ${days}d ${hours}h`;
+  }
+  if (hours > 0) {
+    return `还剩 ${hours}h`;
+  }
+  return "还剩 < 1h";
+}
+
 function inferPlainTagColor(label: string): string {
   const normalized = label.trim().toLowerCase();
 

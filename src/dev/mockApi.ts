@@ -21,7 +21,7 @@ const nodes: NodeInfo[] = [
     virtualization: "KVM",
     os: "debian",
     kernel_version: "6.1.0",
-    gpu_name: "",
+    gpu_name: "NVIDIA GeForce RTX 4090",
     mem_total: 8 * GIB,
     swap_total: 2 * GIB,
     disk_total: 160 * GIB,
@@ -35,6 +35,7 @@ const nodes: NodeInfo[] = [
     public_remark: "东京入口与静态资源",
     traffic_limit: 4 * TIB,
     traffic_limit_type: "sum",
+    traffic_next_reset: new Date(Date.now() + (12 * 24 + 5) * 3600_000).toISOString(),
     ipv4: "203.0.113.11",
     ipv6: "2001:db8::11",
     created_at: dateAfter(-420),
@@ -219,6 +220,22 @@ function latestStatus() {
         {
           online: true,
           cpu,
+          ...(index === 0
+            ? {
+                gpu: {
+                  count: 1,
+                  average_usage: 68.5,
+                  detailed_info: [
+                    {
+                      name: "NVIDIA GeForce RTX 4090",
+                      utilization: 68.5,
+                      memory_used: 14 * GIB,
+                      memory_total: 24 * GIB,
+                    },
+                  ],
+                },
+              }
+            : {}),
           ram: (node.mem_total * memoryPct) / 100,
           ram_total: node.mem_total,
           swap: (node.swap_total * swapPct) / 100,
@@ -254,7 +271,12 @@ function loadRecords(uuid: string) {
     const ram = node.mem_total * Math.min(0.94, 0.35 + index * 0.08 + Math.cos(phase) * 0.04);
     return {
       cpu,
-      gpu: 0,
+      gpu:
+        node.uuid === "tokyo-edge-01"
+          ? Math.max(10, Math.min(95, 68 + Math.sin(phase) * 15))
+          : undefined,
+      gpu_mem: node.uuid === "tokyo-edge-01" ? 14 * GIB : undefined,
+      gpu_mem_total: node.uuid === "tokyo-edge-01" ? 24 * GIB : undefined,
       ram,
       ram_total: node.mem_total,
       swap: node.swap_total * 0.08,
@@ -298,6 +320,7 @@ function trafficMetricPayload(params: {
     return metricKeys.map((metricKey) => ({
       metric_key: metricKey,
       entity_id: uuid,
+      tags: {} as Record<string, string>,
       interval_seconds: intervalMs / 1000,
       points: Array.from({ length: pointCount }, (_, pointIndex) => {
         const phase = pointIndex / 9 + index * 0.8;
@@ -352,6 +375,10 @@ function pingMetricPayload(params: {
         tags: { task_id: String(task.id) },
         interval_seconds: intervalMs / 1000,
         points: Array.from({ length: pointCount }, (_, pointIndex) => {
+          // 模拟中间一段大面积掉线/断网区间(如用户截图中 1.5 小时的完全离线)
+          if (pointIndex >= 80 && pointIndex <= 160) {
+            return null;
+          }
           const time = new Date(start + (pointIndex + 1) * intervalMs).toISOString();
           const lost = index === 2 && pointIndex % 17 === 0;
           if (metricKey === "ping.loss") {
@@ -365,7 +392,7 @@ function pingMetricPayload(params: {
               : Math.max(1, baseline + Math.round(Math.sin(pointIndex / 5 + index) * 9)),
             count: 1,
           };
-        }),
+        }).filter((item): item is { time: string; value: number | null; count: number } => Boolean(item)),
       })),
     );
   });
@@ -380,6 +407,9 @@ function pingMetricPayload(params: {
 // queryMetrics 的负载路径:直接把 loadRecords 的字段转成对应 metric 序列。
 const LOAD_METRIC_RECORD_FIELD = {
   "cpu.usage": "cpu",
+  "gpu.usage": "gpu",
+  "gpu.memory.used": "gpu_mem",
+  "gpu.memory.total": "gpu_mem_total",
   "memory.used": "ram",
   "swap.used": "swap",
   "load.average": "load",
@@ -403,10 +433,11 @@ function loadMetricPayload(params: { metric_keys?: string[]; entity_ids?: string
     return metricKeys.map((metricKey) => ({
       metric_key: metricKey,
       entity_id: uuid,
+      tags: {} as Record<string, string>,
       interval_seconds: 300,
       points: records.map((record) => ({
         time: new Date(record.time).toISOString(),
-        value: record[LOAD_METRIC_RECORD_FIELD[metricKey]],
+        value: record[LOAD_METRIC_RECORD_FIELD[metricKey]] ?? null,
         count: 1,
       })),
     }));
@@ -459,13 +490,163 @@ function json(data: unknown, init?: ResponseInit) {
   });
 }
 
+const defaultTheme = "junimo";
+const savedThemeSettings: Record<string, Record<string, unknown>> = {};
+
+export function isDevMock(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    import.meta.env.DEV &&
+    new URLSearchParams(window.location.search).get("mock") === "1"
+  );
+}
+
+export function mockGetSession() {
+  const adminMode = new URLSearchParams(window.location.search).get("admin") === "1";
+  return Promise.resolve({
+    logged_in: adminMode,
+    username: adminMode ? "mock-admin" : "",
+    uuid: adminMode ? "mock-admin-uuid" : "",
+  });
+}
+
+export function mockGetPublicConfig() {
+  return Promise.resolve({
+    sitename: "Junimo Ops",
+    description: "全球节点运行状态",
+    theme: "junimo",
+    allow_cors: false,
+    disable_password_login: false,
+    oauth_enable: false,
+    private_site: false,
+    record_enabled: true,
+    record_preserve_time: 30 * 24,
+    ping_record_preserve_time: 30 * 24,
+    metric_retention_days: 90,
+    custom_head: "",
+    custom_body: "",
+    theme_settings: savedThemeSettings[defaultTheme] ?? {
+      desktopNodeViewMode: "compact",
+      mobileNodeViewMode: "compact",
+      showHomeOverview: true,
+      showGroupTabs: true,
+      showRegionBar: true,
+      showCardGroup: true,
+      enableHomeSort: true,
+      showCostSummary: true,
+      showCostSummaryFloatingButton: true,
+      showOverviewRatings: true,
+      showTrafficRating: true,
+      showBandwidthRating: true,
+      showAssetRating: true,
+      showPingChart: true,
+      homepagePingBindings: { "2": nodes.map((node) => node.uuid) },
+      enableHomepageMultiPing:
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("multiPing") === "1",
+      homepageMultiPingTaskIds: [1, 2, 3],
+      farmSignColors: {
+        green: ["Tokyo Edge"],
+        blue: ["Singapore API"],
+        red: ["Frankfurt DB"],
+        pink: ["New York Worker"],
+        honey: ["Hong Kong Cache"],
+      },
+    },
+  });
+}
+
+export function mockGetNodes(): Promise<NodeInfo[]> {
+  return Promise.resolve(nodes);
+}
+
+export function mockGetLatestStatus(uuids?: string[]): Promise<Record<string, unknown>> {
+  const full = latestStatus();
+  if (!uuids || uuids.length === 0) return Promise.resolve(full);
+  const filtered: Record<string, unknown> = {};
+  for (const uuid of uuids) {
+    if (full[uuid]) filtered[uuid] = full[uuid];
+  }
+  return Promise.resolve(filtered);
+}
+
+export function mockQueryMetrics(params: {
+  metric_keys?: readonly string[];
+  entity_ids?: string[];
+  hours?: number;
+  tags?: Record<string, string>;
+  start?: string;
+  end?: string;
+}) {
+  const keys = params.metric_keys ?? [];
+  if (keys.some((k) => k.startsWith("ping."))) {
+    return Promise.resolve(
+      pingMetricPayload({
+        metric_keys: [...keys],
+        entity_ids: params.entity_ids,
+        hours: params.hours,
+        tags: params.tags ? { task_id: params.tags.task_id } : undefined,
+      }),
+    );
+  }
+  if (keys.some((k) => k.startsWith("traffic.") || k.includes(".rate"))) {
+    return Promise.resolve(
+      trafficMetricPayload({
+        metric_keys: [...keys],
+        entity_ids: params.entity_ids,
+        start: params.start,
+        end: params.end,
+      }),
+    );
+  }
+  return Promise.resolve(
+    loadMetricPayload({
+      metric_keys: [...keys],
+      entity_ids: params.entity_ids,
+    }),
+  );
+}
+
+export function mockGetPingTasks() {
+  return Promise.resolve(pingTasks);
+}
+
+export function mockGetPingStats(params: {
+  entity_ids?: string[];
+  task_ids?: (number | string)[];
+}) {
+  const ids = params.entity_ids?.length ? params.entity_ids : nodes.map((n) => n.uuid);
+  const tasks = params.task_ids?.length
+    ? pingTasks.filter((t) => params.task_ids!.map(String).includes(String(t.id)))
+    : pingTasks;
+  return Promise.resolve({
+    stats: ids.flatMap((uuid) =>
+      tasks.map((task) => ({
+        entity_id: uuid,
+        task_id: String(task.id),
+        name: task.name,
+        type: task.type,
+        interval: task.interval,
+        total: 60,
+        valid: 58,
+        loss: 0,
+        min: 15,
+        max: 35,
+        avg: 22,
+        latest: 21,
+        p50: 21,
+        p99: 34,
+        stddev: 2.5,
+        p99_p50_ratio: 1.6,
+      })),
+    ),
+  });
+}
+
 export function installDevMockApi() {
   const nativeFetch = window.fetch.bind(window);
   // ?mock=1&admin=1 模拟已登录管理员,连带放开 /api/admin/*,ThemeManage 才可在 dev 调试。
   const adminMode = new URLSearchParams(window.location.search).get("admin") === "1";
-  // 保存后的主题设置驻留内存,让「保存 → /api/public refetch」链路在 dev 里闭环。
-  const defaultTheme = "junimo";
-  const savedThemeSettings: Record<string, Record<string, unknown>> = {};
 
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = new Request(input, init);

@@ -23,6 +23,16 @@ import type {
 import { MetricsService } from "@komari/proto/komari/metrics/v1/metrics_pb";
 import { PingTaskService } from "@komari/proto/komari/admin/v1/ping_pb";
 import type { AgentReport } from "@komari/proto/komari/report/v1/report_pb";
+import {
+  isDevMock,
+  mockGetLatestStatus,
+  mockGetNodes,
+  mockGetPingStats,
+  mockGetPingTasks,
+  mockGetPublicConfig,
+  mockGetSession,
+  mockQueryMetrics,
+} from "@/dev/mockApi";
 
 const transport = createConnectTransport({
   baseUrl:
@@ -58,6 +68,7 @@ const secondsOf = (value?: Duration) =>
 // ---------------------------------------------------------------- 站点与会话
 
 export async function fetchPublicConfig(options?: ConnectCallOptions) {
+  if (isDevMock()) return mockGetPublicConfig();
   const info: GetPublicInfoResponse = await browserClient.getPublicInfo(
     {},
     callOptions(options),
@@ -82,6 +93,7 @@ export async function fetchPublicConfig(options?: ConnectCallOptions) {
 }
 
 export async function fetchSession(options?: ConnectCallOptions) {
+  if (isDevMock()) return mockGetSession();
   const session = await browserClient.getSession({}, callOptions(options));
   return {
     logged_in: session.loggedIn,
@@ -123,6 +135,15 @@ const nodeInfoOf = (agent: AgentSummary) => {
     public_remark: basic?.publicRemark ?? "",
     traffic_limit: asNumber(basic?.trafficLimitBytes),
     traffic_limit_type: basic?.trafficLimitType ?? "",
+    traffic_next_reset:
+      isoOf(
+        (agent as unknown as { trafficAccounting?: { nextReset?: Timestamp } })
+          .trafficAccounting?.nextReset,
+      ) ||
+      isoOf(
+        (basic as unknown as { trafficNextReset?: Timestamp })?.trafficNextReset,
+      ) ||
+      "",
     // ListAgents 按站点的「向访客展示 IP」设置决定是否下发，管理员拿到完整值。
     ipv4: basic?.ipv4 ?? "",
     ipv6: basic?.ipv6 ?? "",
@@ -132,6 +153,7 @@ const nodeInfoOf = (agent: AgentSummary) => {
 };
 
 export async function fetchNodes(options?: ConnectCallOptions) {
+  if (isDevMock()) return mockGetNodes();
   const response = await browserClient.listAgents({}, callOptions(options));
   return response.agents.map(nodeInfoOf);
 }
@@ -147,8 +169,37 @@ const realtimeOf = (agent: AgentSummary, report?: AgentReport) => {
   const disk =
     report?.disks.find((item) => item.mountPoint === "aggregate") ??
     report?.disks[0];
+
+  const gpus = resources?.gpus ?? [];
+  let gpu:
+    | {
+        usage: number;
+        memUsed: number;
+        memTotal: number;
+        count?: number;
+        name?: string;
+      }
+    | undefined = undefined;
+  if (gpus.length > 0) {
+    const memTotal = gpus.reduce((acc, g) => acc + asNumber(g.memoryTotalBytes), 0);
+    const memUsed = gpus.reduce((acc, g) => acc + asNumber(g.memoryUsedBytes), 0);
+    const measuredGpus = gpus.filter((g) => g.utilizationPercent !== undefined);
+    const usage =
+      measuredGpus.length > 0
+        ? measuredGpus.reduce((acc, g) => acc + (g.utilizationPercent ?? 0), 0) / measuredGpus.length
+        : 0;
+    gpu = {
+      usage,
+      memUsed,
+      memTotal,
+      count: gpus.length,
+      name: gpus[0]?.name || agent.basicInfo?.gpuName || "",
+    };
+  }
+
   return {
     cpu: { usage: resources?.cpuPercent ?? 0 },
+    gpu,
     ram: {
       total: asNumber(report?.system?.memoryTotalBytes),
       used: asNumber(resources?.memoryUsedBytes),
@@ -233,6 +284,7 @@ export async function fetchLatestStatus(
   uuids?: string[],
   options?: ConnectCallOptions,
 ): Promise<Record<string, unknown>> {
+  if (isDevMock()) return mockGetLatestStatus(uuids);
   startLiveStatusStream();
   if (snapshot.size === 0 && firstEvent) {
     const budget = options?.timeout ?? 10_000;
@@ -276,6 +328,22 @@ const rangeOf = (params: MetricQueryParams) => {
   return { start, end };
 };
 
+export interface MetricQueryPayload {
+  start: string;
+  end: string;
+  series: Array<{
+    metric_key: string;
+    entity_id: string;
+    tags: Record<string, string>;
+    interval_seconds: number;
+    points: Array<{
+      time: string;
+      value: number | null;
+      count: number;
+    }>;
+  }>;
+}
+
 /**
  * 指标查询。
  *
@@ -286,7 +354,8 @@ const rangeOf = (params: MetricQueryParams) => {
 export async function queryMetrics(
   params: MetricQueryParams,
   options?: ConnectCallOptions,
-) {
+): Promise<MetricQueryPayload> {
+  if (isDevMock()) return mockQueryMetrics(params);
   const { start, end } = rangeOf(params);
   const metricKeys = params.metric_keys ?? [];
   const defaultMaxPoints = params.max_points ?? 500;
@@ -348,7 +417,6 @@ export async function queryMetrics(
 }
 
 /** 指标查询结果的形状由适配层决定，上层直接沿用推断出的类型。 */
-export type MetricQueryPayload = Awaited<ReturnType<typeof queryMetrics>>;
 export type MetricPayloadSeries = MetricQueryPayload["series"][number];
 
 // ---------------------------------------------------------------- 延迟
@@ -366,6 +434,7 @@ export async function queryPingStats(
   params: PingStatsParams,
   options?: ConnectCallOptions,
 ) {
+  if (isDevMock()) return mockGetPingStats(params);
   const { start, end } = rangeOf(params);
   const response = await metricsClient.getPingStats(
     {
@@ -403,6 +472,7 @@ export type PingStatsPayload = Awaited<ReturnType<typeof queryPingStats>>;
 
 /** 公开的延迟任务：只含名称与周期，不含探测目标地址。 */
 export async function listPublicPingTasks(options?: ConnectCallOptions) {
+  if (isDevMock()) return mockGetPingTasks();
   const response = await metricsClient.listPingTasks({}, callOptions(options));
   return response.tasks.map((task) => ({
     id: Number(task.taskId),
@@ -418,6 +488,7 @@ export async function listPublicPingTasks(options?: ConnectCallOptions) {
 
 /** 后台的延迟任务：含探测目标与关联节点，需要管理员会话。 */
 export async function listAdminPingTasks(options?: ConnectCallOptions) {
+  if (isDevMock()) return mockGetPingTasks();
   const response = await pingTaskClient.listPingTasks({}, callOptions(options));
   return response.tasks.map((task) => ({
     id: task.id,

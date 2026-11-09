@@ -117,6 +117,8 @@ const CANVAS_COLOR_FALLBACKS = {
   light: {
     "--progress-bg": "#e4e4e7",
     "--progress-cpu": "#3b82f6",
+    "--progress-gpu": "#06b6d4",
+    "--progress-gpu-memory": "#8b5cf6",
     "--progress-memory": "#8b5cf6",
     "--progress-disk": "#e97b35",
     "--progress-network": "#10b981",
@@ -141,6 +143,8 @@ const CANVAS_COLOR_FALLBACKS = {
   dark: {
     "--progress-bg": "#343b45",
     "--progress-cpu": "#539bf5",
+    "--progress-gpu": "#22d3ee",
+    "--progress-gpu-memory": "#c084fc",
     "--progress-memory": "#b083f0",
     "--progress-disk": "#e0823d",
     "--progress-network": "#57ab5a",

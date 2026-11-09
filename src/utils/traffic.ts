@@ -5,6 +5,7 @@ export interface TrafficDisplay {
   remainingLabel: string;
   detail: string;
   typeLabel: string;
+  resetRemaining?: string | null;
 }
 
 function nonNegative(value: number): number {

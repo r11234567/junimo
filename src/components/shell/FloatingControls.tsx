@@ -140,7 +140,7 @@ export function FloatingControls({
             )}
             {showThemeManage && (
               <Link
-                to="/?view=theme-manage"
+                to="/theme-manage"
                 aria-label="主题设置"
                 title="主题设置"
                 tabIndex={hiddenTabIndex}

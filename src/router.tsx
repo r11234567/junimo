@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { loadAssetsPage } from "@/services/assetsPageLoader";
 import { Traffic } from "@/pages/Traffic";
 import { Home } from "@/pages/Home";
+import { ThemeManagePage } from "@/pages/ThemeManagePage";
 
 const Instance = lazy(() =>
   import("@/pages/Instance").then((m) => ({ default: m.Instance })),
@@ -50,6 +51,18 @@ export const router = createBrowserRouter([
       {
         path: "traffic",
         element: <Traffic />,
+      },
+      {
+        path: "theme-manage",
+        element: <ThemeManagePage />,
+      },
+      {
+        path: "manage",
+        element: <ThemeManagePage />,
+      },
+      {
+        path: "settings",
+        element: <ThemeManagePage />,
       },
       {
         path: "404",
