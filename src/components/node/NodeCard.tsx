@@ -20,7 +20,7 @@ import { useNodeCardModel } from "@/hooks/useNodeCardModel";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useMetricColorsVersion } from "@/hooks/useMetricColors";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
-import { formatBytes, formatOfflineDuration } from "@/utils/format";
+import { formatBytes, formatOfflineDuration, formatTrafficGB } from "@/utils/format";
 import { resolveFarmSignColorId } from "@/utils/farmSign";
 import { HOMEPAGE_MULTI_PING_TASK_COUNT } from "@/utils/pingTasks";
 import {
@@ -353,7 +353,7 @@ function NodeTrafficSection({
         direction="上行"
         totalLabel="出站"
         rate={upRate}
-        total={formatBytes(node.trafficUp)}
+        total={formatTrafficGB(node.trafficUp)}
         samples={trafficTrend.up}
         live={isOnline}
         active={node.netUp > 0}
@@ -365,7 +365,7 @@ function NodeTrafficSection({
         direction="下行"
         totalLabel="入站"
         rate={downRate}
-        total={formatBytes(node.trafficDown)}
+        total={formatTrafficGB(node.trafficDown)}
         samples={trafficTrend.down}
         live={isOnline}
         active={node.netDown > 0}

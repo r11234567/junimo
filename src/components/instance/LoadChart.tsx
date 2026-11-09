@@ -31,7 +31,7 @@ import {
   fillMissingMetricPoints,
   interpolateMetricGaps,
 } from "./chartData";
-import { formatBytes, formatTrafficRateLabel } from "@/utils/format";
+import { formatBytes, formatTrafficGB, formatTrafficRateLabel } from "@/utils/format";
 import { historyChartRangeSeconds, historyCoverageLabel } from "@/utils/historyRange";
 import { resolveLoadRecordTotals } from "@/utils/loadMetrics";
 import { usePreferences } from "@/hooks/usePreferences";
@@ -696,8 +696,8 @@ export function LoadChart({
           }
           note={
             <span className="instance-overview-multi">
-              <span className="inline-flex items-center gap-1"><ArrowDown size={11} />{isRealtime && node ? formatBytes(node.trafficDown) : latestHistoryRecord ? formatBytes(latestHistoryRecord.net_total_down ?? 0) : "—"}</span>
-              <span className="inline-flex items-center gap-1"><ArrowUp size={11} />{isRealtime && node ? formatBytes(node.trafficUp) : latestHistoryRecord ? formatBytes(latestHistoryRecord.net_total_up ?? 0) : "—"}</span>
+              <span className="inline-flex items-center gap-1"><ArrowDown size={11} />{isRealtime && node ? formatTrafficGB(node.trafficDown) : latestHistoryRecord ? formatTrafficGB(latestHistoryRecord.net_total_down ?? 0) : "—"}</span>
+              <span className="inline-flex items-center gap-1"><ArrowUp size={11} />{isRealtime && node ? formatTrafficGB(node.trafficUp) : latestHistoryRecord ? formatTrafficGB(latestHistoryRecord.net_total_up ?? 0) : "—"}</span>
             </span>
           }
           points={points}

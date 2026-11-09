@@ -10,6 +10,7 @@ import {
 } from "./instanceTodayTrafficFormat";
 import {
   formatBytes,
+  formatTrafficGB,
   formatTrafficResetRemaining,
   formatUptimeDays,
 } from "@/utils/format";
@@ -155,7 +156,7 @@ export function InstanceDetails({
           <div className="instance-info-item is-stack">
             <span className="instance-info-label">总流量</span>
             <div className="instance-info-traffic">
-              <span className="instance-info-value">{`↑ ${formatBytes(metrics.trafficUp)} · ↓ ${formatBytes(metrics.trafficDown)}`}</span>
+              <span className="instance-info-value">{`↑ ${formatTrafficGB(metrics.trafficUp)} · ↓ ${formatTrafficGB(metrics.trafficDown)}`}</span>
               {meta.traffic_limit > 0 && (
                 <>
                   <div className="instance-progress-track" aria-hidden>
@@ -165,7 +166,7 @@ export function InstanceDetails({
                     />
                   </div>
                   <span className="instance-info-note">
-                    {`${formatBytes(trafficUsage.used)} / ${formatBytes(meta.traffic_limit)}`}
+                    {`${formatTrafficGB(trafficUsage.used)} / ${formatTrafficGB(meta.traffic_limit)}`}
                     {resetRemaining && ` · 重置${resetRemaining}`}
                   </span>
                 </>

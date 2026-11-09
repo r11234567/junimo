@@ -7,7 +7,7 @@ import { useMinuteClock } from "@/hooks/useClock";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useTodayTrafficStats } from "@/hooks/useTodayTrafficStats";
 import { useVisibleNodes } from "@/hooks/useVisibleNodes";
-import { formatByteRateLabel, formatBytes } from "@/utils/format";
+import { formatByteRateLabel, formatTrafficGB } from "@/utils/format";
 import type { NodeInfo } from "@/types/komari";
 import type { TodayTrafficSample, TodayTrafficStat } from "@/utils/trafficStats";
 
@@ -224,11 +224,11 @@ export function Traffic() {
                 <span>{DAY_FORMATTER.format(now)}</span>
               </div>
               <strong className="traffic-summary-total">
-                {sampledDetails.length > 0 ? formatBytes(totalUp + totalDown) : "—"}
+                {sampledDetails.length > 0 ? formatTrafficGB(totalUp + totalDown) : "—"}
               </strong>
               <div className="traffic-summary-directions">
-                <span><ArrowUp size={13} aria-hidden />{formatBytes(totalUp)}</span>
-                <span><ArrowDown size={13} aria-hidden />{formatBytes(totalDown)}</span>
+                <span><ArrowUp size={13} aria-hidden />{formatTrafficGB(totalUp)}</span>
+                <span><ArrowDown size={13} aria-hidden />{formatTrafficGB(totalDown)}</span>
               </div>
             </article>
 
@@ -285,8 +285,8 @@ export function Traffic() {
                         <td data-numeric data-strong>
                           {stat.hasSamples ? (
                             <span className="traffic-volume-value">
-                              <strong>{formatBytes(total)}</strong>
-                              <small>↑ {formatBytes(stat.trafficUp)} · ↓ {formatBytes(stat.trafficDown)}</small>
+                              <strong>{formatTrafficGB(total)}</strong>
+                              <small>↑ {formatTrafficGB(stat.trafficUp)} · ↓ {formatTrafficGB(stat.trafficDown)}</small>
                             </span>
                           ) : (
                             <span className="traffic-no-data">无数据</span>
@@ -335,7 +335,7 @@ export function Traffic() {
                       <span>{node.name}</span>
                     </Link>
                     <div className="traffic-node-card-actions">
-                      <strong>{stat.hasSamples ? formatBytes(total) : "无数据"}</strong>
+                      <strong>{stat.hasSamples ? formatTrafficGB(total) : "无数据"}</strong>
                       <TrafficDetailToggle
                         expanded={expanded}
                         controlsId={detailId}
@@ -346,8 +346,8 @@ export function Traffic() {
                   {stat.hasSamples && (
                     <>
                       <div className="traffic-node-card-directions">
-                        <span>↑ {formatBytes(stat.trafficUp)}</span>
-                        <span>↓ {formatBytes(stat.trafficDown)}</span>
+                        <span>↑ {formatTrafficGB(stat.trafficUp)}</span>
+                        <span>↓ {formatTrafficGB(stat.trafficDown)}</span>
                       </div>
                       <dl className="traffic-node-card-peaks">
                         <div>

@@ -20,7 +20,7 @@ import { Flag } from "@/components/ui/Flag";
 import { OsLogo } from "@/components/ui/OsLogo";
 import { useNodeCardModel } from "@/hooks/useNodeCardModel";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
-import { formatBytes, formatOfflineDuration } from "@/utils/format";
+import { formatBytes, formatOfflineDuration, formatTrafficGB } from "@/utils/format";
 import { resolveFarmSignColorId } from "@/utils/farmSign";
 import { HOMEPAGE_MULTI_PING_TASK_COUNT } from "@/utils/pingTasks";
 import { speedRateColor, speedRateColorFromBytes } from "@/utils/metricTone";
@@ -533,7 +533,7 @@ function CompactNodeInfoStrip({
                 aria-label="上行"
               />
             )}
-            value={formatBytes(node.trafficUp)}
+            value={formatTrafficGB(node.trafficUp)}
           />
           <CompactInfoRow
             icon={(
@@ -543,7 +543,7 @@ function CompactNodeInfoStrip({
                 aria-label="下行"
               />
             )}
-            value={formatBytes(node.trafficDown)}
+            value={formatTrafficGB(node.trafficDown)}
           />
         </CompactInfoTile>
       )}

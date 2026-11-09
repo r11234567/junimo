@@ -6,6 +6,7 @@ import {
   formatClockTime,
   formatExpireDays,
   formatOfflineDuration,
+  formatTrafficGB,
   formatTrafficRateLabel,
   formatTrafficResetRemaining,
   formatUptimeDays,
@@ -41,6 +42,26 @@ describe("formatBytes", () => {
     expect(formatBytes(MB)).toBe("1.00 MB");
     expect(formatBytes(100 * MB)).toBe("100 MB");
     expect(formatBytes(2.5 * GB)).toBe("2.50 GB");
+  });
+});
+
+describe("formatTrafficGB", () => {
+  it("formats decimal GB matching provider calibration and komari backend", () => {
+    expect(formatTrafficGB(70_450_000_000)).toBe("70.45 GB");
+    expect(formatTrafficGB(60_560_000_000)).toBe("60.56 GB");
+    expect(formatTrafficGB(131_020_000_000)).toBe("131.02 GB");
+    expect(formatTrafficGB(131_020_000_000, true)).toBe("131.02GB");
+    expect(formatTrafficGB(131_020_000_000, false, 1)).toBe("131.02 GB");
+    expect(formatTrafficGB(590_558_003_200)).toBe("590.56 GB");
+    expect(formatTrafficGB(1_073_741_824)).toBe("1.07 GB");
+  });
+
+  it("handles empty / negative / non-finite inputs as 0.00 GB", () => {
+    expect(formatTrafficGB(0)).toBe("0.00 GB");
+    expect(formatTrafficGB(null)).toBe("0.00 GB");
+    expect(formatTrafficGB(undefined)).toBe("0.00 GB");
+    expect(formatTrafficGB(-100)).toBe("0.00 GB");
+    expect(formatTrafficGB(Number.NaN)).toBe("0.00 GB");
   });
 });
 

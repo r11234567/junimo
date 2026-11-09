@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { formatBytes, formatByteRate } from "@/utils/format";
+import { formatByteRate, formatTrafficGB } from "@/utils/format";
 import { speedRateColor } from "@/utils/metricTone";
 
 export interface OverviewCollapseData {
@@ -36,11 +36,6 @@ export function writeStoredCollapsed(
   }
 }
 
-function formatCompactBytes(value: number): string {
-  const [amount, unit = "B"] = formatBytes(value).split(" ");
-  return `${amount}${unit[0]}`;
-}
-
 /**
  * 顶部总览折叠条:单行精简显示核心数据(在线节点/实时带宽/累计流量),
  * 右侧箭头点击展开/收起完整总览。折叠状态存 localStorage。
@@ -54,8 +49,9 @@ export function OverviewCollapseBar({
   expanded: boolean;
   onToggle: () => void;
 }) {
-  const trafficLabel = `↑${formatCompactBytes(data.trafficUp)} ↓${formatCompactBytes(
+  const trafficLabel = `↑${formatTrafficGB(data.trafficUp, true)} ↓${formatTrafficGB(
     data.trafficDown,
+    true,
   )}`;
   const rate = formatByteRate(data.netUp + data.netDown);
   const onlineLabel = `${data.onlineNodes}/${data.totalNodes}`;

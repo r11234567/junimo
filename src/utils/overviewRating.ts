@@ -5,7 +5,7 @@ export interface OverviewRating {
   label: string;
 }
 
-const GB = 1024 ** 3;
+const TRAFFIC_GB = 1_000_000_000;
 const MBPS_IN_BYTES_PER_SECOND = 1_000_000 / 8;
 
 const DEFAULT_LABELS: Record<OverviewRatingKind, readonly string[]> = {
@@ -53,7 +53,7 @@ export function getOverviewRating({
     kind === "asset"
       ? levelFromThresholds(value, [500, 1500, 3000])
       : kind === "traffic"
-        ? levelFromThresholds(value, [500 * GB, 2000 * GB, 10000 * GB])
+        ? levelFromThresholds(value, [500 * TRAFFIC_GB, 2000 * TRAFFIC_GB, 10000 * TRAFFIC_GB])
         : levelFromThresholds(value, [
             1 * MBPS_IN_BYTES_PER_SECOND,
             10 * MBPS_IN_BYTES_PER_SECOND,

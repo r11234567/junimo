@@ -7,7 +7,7 @@ import { OsLogo } from "@/components/ui/OsLogo";
 import { useNodeCardModel } from "@/hooks/useNodeCardModel";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useMetricColorsVersion } from "@/hooks/useMetricColors";
-import { formatBytes } from "@/utils/format";
+import { formatTrafficGB } from "@/utils/format";
 import { speedRateColor } from "@/utils/metricTone";
 import { CanvasStrip, fillRoundedRect, safeCanvasColor } from "./CanvasStrip";
 import { LatencyBars } from "./LatencyBars";
@@ -377,8 +377,8 @@ const NodeRow = memo(function NodeRow({ uuid }: { uuid: string }) {
         title={`剩余 ${traffic.remainingLabel} · ${traffic.detail}${traffic.resetRemaining ? ` · 重置${traffic.resetRemaining}` : ""}`}
       >
         <div className="node-list-traffic-rows">
-          <StackLine icon={<ArrowUp size={11} strokeWidth={2.1} />} value={formatBytes(node.trafficUp)} />
-          <StackLine icon={<ArrowDown size={11} strokeWidth={2.1} />} value={formatBytes(node.trafficDown)} />
+          <StackLine icon={<ArrowUp size={11} strokeWidth={2.1} />} value={formatTrafficGB(node.trafficUp)} />
+          <StackLine icon={<ArrowDown size={11} strokeWidth={2.1} />} value={formatTrafficGB(node.trafficDown)} />
         </div>
         <div className="flex flex-col items-end">
           <span className="node-list-traffic-quota" style={{ color: traffic.color }}>

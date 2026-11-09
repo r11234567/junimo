@@ -28,7 +28,7 @@ import {
   pingEmptyLabels,
 } from "./nodeCardShared";
 import { formatHealthBucketTooltip } from "./pingBucketText";
-import { formatBytes, formatOfflineDuration, type ByteRateDisplay } from "@/utils/format";
+import { formatOfflineDuration, formatTrafficGB, type ByteRateDisplay } from "@/utils/format";
 import { resolveFarmSignColorId } from "@/utils/farmSign";
 import type { NodeInfo, NodeMetrics, PingOverviewItem, PingOverviewBucket } from "@/types/komari";
 
@@ -285,12 +285,12 @@ function MiniFlow({
       <div className="mini-node-flow-group" aria-label="累计流量">
         <MiniFlowRow
           icon={<ArrowUp size={12} strokeWidth={2.2} />}
-          value={formatBytes(node.trafficUp)}
+          value={formatTrafficGB(node.trafficUp)}
           title={`累计上行${resetRemaining ? ` · 重置${resetRemaining}` : ""}`}
         />
         <MiniFlowRow
           icon={<ArrowDown size={12} strokeWidth={2.2} />}
-          value={formatBytes(node.trafficDown)}
+          value={formatTrafficGB(node.trafficDown)}
           title={`累计下行${resetRemaining ? ` · 重置${resetRemaining}` : ""}`}
         />
       </div>

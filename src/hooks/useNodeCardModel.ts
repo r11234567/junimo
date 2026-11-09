@@ -13,9 +13,9 @@ import type { HomepagePingDisplayLine, HomepagePingLine } from "@/types/komari";
 import { formatRenewalPrice } from "@/utils/billing";
 import { getExpireTextColor } from "@/utils/expireStatus";
 import {
-  formatBytes,
   formatByteRate,
   formatExpireDays,
+  formatTrafficGB,
   formatTrafficResetRemaining,
   formatUptimeDays,
   joinDisplayParts,
@@ -215,10 +215,10 @@ export function useNodeCardModel(
       metrics.trafficDown,
       meta.traffic_limit,
     );
-    const trafficUsedLabel = formatBytes(trafficUsage.used);
+    const trafficUsedLabel = formatTrafficGB(trafficUsage.used);
     // 不限量时渲染成 ∞，让剩余值和"已用/上限"那行与限量情况保持一致
     //（"剩余 ∞" + "2.73 GB / ∞"）。
-    const trafficLimitLabel = trafficUsage.unlimited ? "∞" : formatBytes(trafficUsage.limit);
+    const trafficLimitLabel = trafficUsage.unlimited ? "∞" : formatTrafficGB(trafficUsage.limit);
     const trafficColor = trafficUsage.unlimited
       ? "var(--status-success)"
       : trafficUsageColor(trafficUsage.fraction);
@@ -226,7 +226,7 @@ export function useNodeCardModel(
     const traffic: TrafficDisplay = {
       fraction: trafficUsage.fraction,
       color: trafficColor,
-      remainingLabel: trafficUsage.unlimited ? "∞" : formatBytes(trafficUsage.remaining),
+      remainingLabel: trafficUsage.unlimited ? "∞" : formatTrafficGB(trafficUsage.remaining),
       detail: `${trafficUsedLabel} / ${trafficLimitLabel}`,
       typeLabel: trafficTypeLabel(meta.traffic_limit_type),
       resetRemaining,

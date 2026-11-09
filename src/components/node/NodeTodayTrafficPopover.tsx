@@ -16,7 +16,7 @@ import {
   type NodeTodayTrafficView,
 } from "@/hooks/useTodayTrafficStats";
 import { useFineHover } from "@/hooks/useMediaQuery";
-import { formatBytes, formatByteRateLabel, formatClockTime } from "@/utils/format";
+import { formatByteRateLabel, formatClockTime, formatTrafficGB } from "@/utils/format";
 import {
   consumeTriggerFocusSuppression,
   INITIAL_NODE_TODAY_TRAFFIC_POPOVER_STATE,
@@ -320,12 +320,12 @@ function TodayTrafficPopoverBody({ traffic }: { traffic: NodeTodayTrafficView })
         <PopoverRow
           icon={<ArrowUp size={12} strokeWidth={2.4} />}
           label="上行"
-          value={formatBytes(stat.trafficUp)}
+          value={formatTrafficGB(stat.trafficUp)}
         />
         <PopoverRow
           icon={<ArrowDown size={12} strokeWidth={2.4} />}
           label="下行"
-          value={formatBytes(stat.trafficDown)}
+          value={formatTrafficGB(stat.trafficDown)}
         />
       </div>
       <div className="node-traffic-popover-head is-peak">峰值速度</div>

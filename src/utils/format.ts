@@ -48,6 +48,20 @@ export function formatBytes(n: number | undefined | null): string {
   return `${v.toFixed(dec)} ${UNITS[idx]}`;
 }
 
+/**
+ * 流量统计与配额统一使用十进制 GB (1 GB = 1_000_000_000 字节)，与后端及运营商校准口径保持一致。
+ * 内存、磁盘及瞬时传输速率保持各自独立的二进制 (1024) / 速率格式。
+ */
+export function formatTrafficGB(
+  bytes: number | null | undefined,
+  compact = false,
+  decimals = 2,
+): string {
+  const safeBytes = typeof bytes === "number" && Number.isFinite(bytes) ? Math.max(0, bytes) : 0;
+  const value = (safeBytes / 1_000_000_000).toFixed(Math.max(2, decimals));
+  return `${value}${compact ? "GB" : " GB"}`;
+}
+
 /** 只显示时分（本地时区），用于峰值时间、更新时间等场景。 */
 export function formatClockTime(timeMs: number | null | undefined): string {
   if (timeMs == null || !Number.isFinite(timeMs)) return "—";

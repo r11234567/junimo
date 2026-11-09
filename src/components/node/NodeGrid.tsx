@@ -18,6 +18,7 @@ import {
   formatBytes,
   formatByteRate,
   formatByteRateLabel,
+  formatTrafficGB,
 } from "@/utils/format";
 import { calculateCostSummary, formatCnyMoney, getExchangeRates } from "@/utils/cost";
 import { useHiddenNodeUuids } from "@/hooks/useVisibleNodes";
@@ -152,7 +153,7 @@ function HomeOverviewCards({
   onToggleBandwidthSort: () => void;
   bandwidthSortActive: boolean;
 }) {
-  const [trafficValue, trafficUnit] = formatBytes(
+  const [trafficValue, trafficUnit] = formatTrafficGB(
     overview.trafficUp + overview.trafficDown,
   ).split(" ");
   const rate = formatByteRate(overview.netUp + overview.netDown);
@@ -165,8 +166,8 @@ function HomeOverviewCards({
     : costLoading
       ? "计算中"
       : "—";
-  const trafficDetailLabel = `↑ ${formatBytes(overview.trafficUp)} · ↓ ${formatBytes(overview.trafficDown)}`;
-  const trafficCompactLabel = `↑${formatCompactBytes(overview.trafficUp)} ↓${formatCompactBytes(overview.trafficDown)}`;
+  const trafficDetailLabel = `↑ ${formatTrafficGB(overview.trafficUp)} · ↓ ${formatTrafficGB(overview.trafficDown)}`;
+  const trafficCompactLabel = `↑${formatTrafficGB(overview.trafficUp, true)} ↓${formatTrafficGB(overview.trafficDown, true)}`;
   const bandwidthDetailLabel = `↑ ${formatByteRateLabel(overview.netUp)} · ↓ ${formatByteRateLabel(overview.netDown)}`;
   const bandwidthCompactLabel = `↑${formatCompactBytes(overview.netUp)} ↓${formatCompactBytes(overview.netDown)}`;
   const trafficRating =
